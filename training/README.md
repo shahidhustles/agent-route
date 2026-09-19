@@ -1,85 +1,101 @@
 # Qwen3 router fine-tuning
 
-This workflow trains Qwen3-0.6B with LoRA to read a task and candidate profiles and emit exactly `model_slug` and `confidence`. The existing TypeScript router remains a separate heuristic prototype until the learned model passes evaluation and the app integration is implemented.
+This workflow trains Qwen3-0.6B with LoRA to choose between the measured
+glm-5.3-flash and deepseek-v4.1-flash profiles. It returns only model_slug and
+confidence.
 
-## Data and limits
+## Data contract
 
-Run commands below from the repository root. `generate_data.py` creates 6,400 training, 800 validation and 800 held-out test examples. Task subfamilies are disjoint between splits. About half use anonymous names. Candidate order, subsets and synthetic profile variations change across examples.
+task_families.json contains 120 independently written tasks across coding,
+education, safe finance, documents, research, office work, everyday requests,
+reasoning, tools, long context, spreadsheets, and simple editing. The file
+assigns 80 families to training, 20 to validation, and 20 to the sealed test
+split. A family never crosses a split.
 
-The seven PRD categories retain the requested proportions. There are 42 authored task templates, six per category, with different equipment references. This is an initial synthetic dataset, not 8,000 independently authored work requests. Add independently reviewed prompts before treating held-out results as evidence of broad language generalization.
+The generator expands those families to 6,400 training, 800 validation, and
+800 test examples. It varies candidate order, anonymous model aliases, hardware
+constraints, and bounded copies of the measured profiles. It does not call a
+hosted model. Labels come from the deterministic policy in common.py.
 
-`training-profiles.json` snapshots the six placeholder profiles in `profiles.ts`. No capability or hardware number claims measured performance. Export a new snapshot and regenerate the data when those profiles change. Labels use explicit author-assigned demands and a documented policy in `common.py`. Demands remain in audit metadata and never enter the model prompt or target.
+Run this from the repository root:
 
-The teacher removes candidates that lack mandatory tool calling or sufficient context. Among remaining candidates, it prioritizes sufficient capability, then combines capped capability coverage with speed and memory. Confidence is 0.55 plus the top-two score margin, capped at 0.95. It is an uncalibrated policy estimate. Native vision is never a filter, following the approved assumption that agents receive Vision MCP. This package does not implement Vision MCP.
+    python training/generate_data.py
+    python -m unittest discover -s training -p test_data.py
 
-`requires_tools` and `input_tokens` are optional request metadata for enforceable hard checks. The caller must supply them when known. The wrapper cannot guarantee semantic tool/context requirements omitted by a caller. The model also sees the task text, but a model prediction alone is not a hard constraint validator.
+data/manifest.json records the seed, generator settings, profile version,
+source hashes, split hashes, family counts, category distribution, and
+canonical label distribution. Generated data stays out of Git.
 
-## Install and generate
+## Colab training
 
-```powershell
-python -m venv .venv
-.venv/Scripts/python -m pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cu118
-.venv/Scripts/python -m pip install -r training/requirements.txt
-python training/generate_data.py
-python -m unittest discover -s training -p test_data.py
-```
+Use the Colab MCP for GPU work. Keep credentials in Colab secrets. Training
+does not need the Zen API key, but later benchmark or execution work may.
 
-For a Linux GPU machine, use `.venv/bin/python` in place of `.venv/Scripts/python`. CUDA PyTorch installation must match that machine. Initial dependency and base-checkpoint downloads require internet. Training uses generated local data and disables external experiment reporting. Runtime loads only local files with Hugging Face offline mode enabled.
+Start with a smoke run:
 
-## Train and export
+    python training/train.py --max-steps 3 --limit 32 --accumulation 1 --output artifacts/smoke
 
-### Google Colab
+Then run the full validation-gated pipeline:
 
-Open [`colab.ipynb`](colab.ipynb) in a GPU runtime. The notebook clones the `model-router` branch, regenerates the synthetic dataset, accepts a zipped local checkpoint, resumes with the original batch settings, runs the validation gate and downloads the resulting artifacts. Do not upload confidential MRPL data. Colab is a hosted service.
+    python -u training/run_pipeline.py
 
-First measure a short run. Its artifact is only a training smoke test.
+The full run uses rank 8 LoRA on the attention projections, batch size 8 with
+two-step accumulation, fp16, gradient checkpointing, and the pinned
+Qwen3-0.6B revision. Transformers saves once per epoch and restores the
+checkpoint with the lowest validation loss before export. The pipeline
+evaluates only the validation split.
 
-```powershell
-.venv/Scripts/python training/train.py --max-steps 3 --limit 32 --accumulation 1 --output artifacts/smoke
-```
+Its output under artifacts/qwen3-router/ includes:
 
-Then run the complete training set:
+- the LoRA adapter and merged checkpoint;
+- training and validation logs;
+- training-report.json, including the base revision, hyperparameters, data
+  hashes, selected checkpoint, and validation loss;
+- validation-report.json;
+- training-manifest.json, which links the data, profile, training, and
+  validation evidence.
 
-```powershell
-.venv/Scripts/python training/train.py
-```
+The validation gate requires at least 80% policy agreement, less than 1%
+invalid output, and zero hard-constraint violations.
 
-To run training and the evaluation gates sequentially with progress recorded on disk:
+If validation improves but narrowly misses the agreement gate, refine from the
+selected LoRA adapter without opening the test split:
 
-```powershell
-.venv/Scripts/python -u training/run_pipeline.py --model artifacts/base-qwen3
-```
+    python -u training/run_pipeline.py \
+      --epochs 1 \
+      --adapter artifacts/qwen3-router/checkpoint-800 \
+      --output artifacts/qwen3-router-refined
 
-The local base directory above must already contain the downloaded checkpoint. Omit `--model` to download the pinned base checkpoint through Hugging Face. Progress is in `artifacts/qwen3-router/pipeline-status.json`, with separate stage logs. A failed stage stops the workflow. Validation below 90% policy agreement or below 100% accepted outputs stops before the held-out test. Passing those aggregate gates still requires reviewing the per-family, order and candidate-removal results.
+## Held-out test
 
-The RTX 2050 smoke runs completed real updates and exported local models. Batch size one used about 1.35 GB of allocated GPU memory. Batch size eight used about 4.03 GB and gave little throughput benefit. Use the default batch size one on this 4 GB card. Short-run throughput suggests roughly 4 to 5 hours for two full epochs, excluding evaluation. This is an estimate, not a completed full-run measurement.
+Do not run this command while tuning:
 
-Defaults are rank 8 LoRA on attention projections, learning rate 0.0002, two epochs, batch size one, accumulation 16, fp16 and gradient checkpointing. Loss is computed only on the JSON answer, with next-token alignment. Vocabulary logits are restricted to answer prediction positions to reduce GPU memory. Overlong examples raise an error instead of truncating profiles or targets. The base checkpoint revision is pinned in the script.
+    python training/evaluate.py \
+      --model artifacts/qwen3-router/merged \
+      --split test \
+      --allow-held-out-test \
+      --report artifacts/qwen3-router/test-report.json
 
-The output directory contains resumable checkpoints, `adapter/`, `merged/`, and `training-report.json`. The merged directory includes weights, configuration and tokenizer. Resume an interrupted run with `--resume <checkpoint-directory>` and the same settings. Dataset hashes and the resolved base revision are recorded in the report. Model binaries and generated datasets stay out of Git; the scripts regenerate the data.
+The explicit flag is deliberate. Freeze the checkpoint, data hashes, routing
+policies, and scoring rules before opening the test split. Validation is the
+default when --split is omitted.
 
-## Evaluate before using Auto
-
-```powershell
-.venv/Scripts/python training/evaluate.py --model artifacts/qwen3-router/merged --split validation --report artifacts/validation-report.json
-.venv/Scripts/python training/evaluate.py --model artifacts/qwen3-router/merged --report artifacts/test-report.json
-```
-
-Use validation for iteration. Run the held-out test only after choosing the model. `--limit` makes a partial smoke evaluation and is marked as such in the report. Evaluation generates real model responses. It reports exact routing accuracy, wrapper acceptance, raw invalid slugs, raw constraint violations, per-family results, anonymous-name results, reversed-order results, winner-removal results and latency. Invalid outputs count as failures; the evaluator never replaces a failed generation with the teacher's answer.
-
-The PRD target is at least 90% held-out policy agreement. Wrapper rejection ensures accepted routes obey the supplied hard constraints, but rejection is not successful routing. Do not claim 100% successful routing because invalid results were rejected. Template-policy accuracy does not establish the real candidate models' task success rates.
+Evaluation reports policy agreement, output validity, invalid slugs, hard
+constraint violations, candidate-order agreement, per-category results, and
+latency. Policy agreement measures imitation of the deterministic teacher. It
+does not measure whether a Zen model completes the selected task.
 
 ## Local interface
 
-```powershell
-.venv/Scripts/python training/infer.py --model artifacts/qwen3-router/merged
-```
+    python training/infer.py --model artifacts/qwen3-router/merged
 
-Send one JSON request per input line, containing `user_task`, `candidate_models`, `profiles` and, when available, `requires_tools` and `input_tokens`. The profile schema matches `training-profiles.json`, but arbitrary unique slugs are accepted. Each successful response contains only the selected slug and confidence. Malformed, unknown-slug or incompatible results fail explicitly on stderr. There is no automatic retry or hidden heuristic fallback. Model-load fallback, session locking, manual selection and UI integration belong to the host and are not implemented by this training workflow.
+Send one JSON request per line with user_task, candidate_models, profiles, and
+any known requires_tools, input_tokens, or available_vram_gb values. The
+wrapper rejects malformed output and hard-constraint violations.
 
-## Sources
+## Pinned libraries
 
-- [Qwen3-0.6B model card and non-thinking chat template](https://huggingface.co/Qwen/Qwen3-0.6B)
-- [Transformers 4.51.3 Trainer](https://huggingface.co/docs/transformers/v4.51.3/en/main_classes/trainer)
-- [Qwen3 answer-position logits](https://huggingface.co/docs/transformers/v4.51.3/en/model_doc/qwen3)
-- [PEFT LoRA configuration](https://huggingface.co/docs/peft/v0.15.0/en/package_reference/lora)
+- Transformers 4.51.3
+- PEFT 0.15.2
+- Accelerate 1.6.0
+- safetensors 0.5.3

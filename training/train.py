@@ -9,7 +9,7 @@ from pathlib import Path
 os.environ.setdefault('HF_HUB_DISABLE_TELEMETRY', '1')
 os.environ.setdefault('WANDB_DISABLED', 'true')
 import torch
-from peft import LoraConfig, get_peft_model
+from peft import LoraConfig, PeftModel, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments, set_seed
 from common import prompt
 
@@ -62,9 +62,10 @@ def main():
     parser.add_argument('--epochs', type=float, default=2)
     parser.add_argument('--max-steps', type=int, default=-1)
     parser.add_argument('--limit', type=int, default=0)
-    parser.add_argument('--accumulation', type=int, default=16)
-    parser.add_argument('--batch-size', type=int, default=1)
+    parser.add_argument('--accumulation', type=int, default=2)
+    parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--resume', default=None)
+    parser.add_argument('--adapter', type=Path)
     args = parser.parse_args()
     set_seed(26117)
     if not torch.cuda.is_available():
@@ -81,22 +82,30 @@ def main():
     local_revision = Path(args.model) / 'source-revision.txt'
     if revision is None and local_revision.is_file():
         revision = local_revision.read_text().strip()
-    model = get_peft_model(model, LoraConfig(r=8, lora_alpha=16, lora_dropout=.05,
-        target_modules=['q_proj','k_proj','v_proj','o_proj'], task_type='CAUSAL_LM'))
+    if args.adapter:
+        model = PeftModel.from_pretrained(model,args.adapter,is_trainable=True)
+    else:
+        model = get_peft_model(model, LoraConfig(r=8, lora_alpha=16, lora_dropout=.05,
+            target_modules=['q_proj','k_proj','v_proj','o_proj'], task_type='CAUSAL_LM'))
     model.print_trainable_parameters()
+    full_run = args.max_steps <= 0
     training = TrainingArguments(output_dir=str(args.output), per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=1, gradient_accumulation_steps=args.accumulation,
         num_train_epochs=args.epochs, max_steps=args.max_steps, learning_rate=2e-4,
         warmup_ratio=.03, lr_scheduler_type='cosine', fp16=True,
         gradient_checkpointing=True, gradient_checkpointing_kwargs={'use_reentrant': False},
         logging_steps=1 if args.max_steps > 0 else 10, save_steps=50, save_total_limit=2,
-        eval_strategy='no' if args.max_steps > 0 else 'epoch', report_to=[],
+        eval_strategy='epoch' if full_run else 'no',
+        save_strategy='epoch' if full_run else 'steps',
+        load_best_model_at_end=full_run, metric_for_best_model='eval_loss',
+        greater_is_better=False, report_to=[],
         dataloader_pin_memory=False, seed=26117, optim='adamw_torch', label_names=['labels'])
     trainer = CompletionTrainer(model=model, args=training, train_dataset=train_rows,
         eval_dataset=validation_rows, data_collator=Collator(tokenizer.pad_token_id))
     trainer.model_accepts_loss_kwargs = False
     started = time.time()
     result = trainer.train(resume_from_checkpoint=args.resume)
+    model = trainer.model
     adapter_norm = sum(p.detach().float().norm().item() for name,p in model.named_parameters() if 'lora_B' in name)
     if not torch.isfinite(torch.tensor(adapter_norm)) or adapter_norm == 0:
         raise RuntimeError('Adapter has no finite learned update; refusing to export a trained model')
@@ -108,13 +117,25 @@ def main():
     merged.config.use_cache = True
     merged.save_pretrained(args.output / 'merged', safe_serialization=True)
     tokenizer.save_pretrained(args.output / 'merged')
-    report = {'base_model':args.model, 'resolved_revision':revision, 'training_seconds':time.time()-started,
+    data_manifest_path = ROOT/'data/manifest.json'
+    data_manifest = json.loads(data_manifest_path.read_text())
+    report = {'base_model':args.model, 'resolved_revision':revision,
+        'initial_adapter':str(args.adapter) if args.adapter else None,
+        'initial_adapter_sha256':hashlib.sha256((args.adapter/'adapter_model.safetensors').read_bytes()).hexdigest()
+            if args.adapter else None,
+        'training_seconds':time.time()-started,
         'train_examples':len(train_rows), 'validation_examples':len(validation_rows),
         'max_sequence_tokens':max(len(r['input_ids']) for r in train_rows),
         'smoke_only':args.max_steps > 0 or args.limit > 0, 'metrics':result.metrics,
+        'best_checkpoint':trainer.state.best_model_checkpoint,
+        'best_validation_loss':trainer.state.best_metric,
         'gpu':torch.cuda.get_device_name(0), 'peak_gpu_bytes':torch.cuda.max_memory_allocated(),
         'adapter_b_norm_sum':adapter_norm,
         'dataset_sha256':hashlib.sha256((ROOT/'data/train.jsonl').read_bytes()).hexdigest(),
+        'validation_sha256':hashlib.sha256((ROOT/'data/validation.jsonl').read_bytes()).hexdigest(),
+        'data_manifest_sha256':hashlib.sha256(data_manifest_path.read_bytes()).hexdigest(),
+        'profile_version':data_manifest['profile_version'],
+        'profile_sha256':data_manifest['profile_source']['sha256'],
         'torch':torch.__version__, 'arguments':{k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}}
     (args.output/'training-report.json').write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))

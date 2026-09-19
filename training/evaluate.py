@@ -1,12 +1,13 @@
-"""Held-out generation metrics, including raw failures before wrapper validation."""
+"""Generation metrics, including raw failures before wrapper validation."""
 import argparse
 import copy
+import hashlib
 import json
 import statistics
 import time
 from pathlib import Path
+
 from common import eligible, label, validate_output
-from infer import Router
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -14,12 +15,17 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', required=True)
-    parser.add_argument('--split', choices=['validation','test'], default='test')
+    parser.add_argument('--split', choices=['validation','test'], default='validation')
+    parser.add_argument('--allow-held-out-test', action='store_true')
     parser.add_argument('--limit', type=int, default=0)
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
+    if args.split == 'test' and not args.allow_held_out_test:
+        parser.error('Opening the held-out test requires --allow-held-out-test after artifacts are frozen')
+    from infer import Router
     router = Router(args.model)
-    rows = [json.loads(s) for s in (ROOT/'data'/f'{args.split}.jsonl').read_text().splitlines()][:args.limit or None]
+    split_path = ROOT/'data'/f'{args.split}.jsonl'
+    rows = [json.loads(s) for s in split_path.read_text().splitlines()][:args.limit or None]
     outcomes = []
     for index, row in enumerate(rows):
         variants = [('original',row['input'],row['output'])]
@@ -53,12 +59,13 @@ def main():
                 correct = result['model_slug'] == expected['model_slug']
             except (ValueError,KeyError,TypeError):
                 pass
-            outcomes.append({'index':index,'variant':variant,'family':row['metadata']['family'],
+            outcomes.append({'index':index,'variant':variant,'family_id':row['metadata']['family_id'],
+                'category':row['metadata']['category'],
                 'anonymous':row['metadata']['anonymous'],'valid':valid,'correct':correct,'format_valid':format_valid,
                 'invalid_slug':invalid_slug,'constraint_violation':constraint_violation,
                 'seconds':elapsed,'raw':raw,'expected':expected})
         if (index+1) % 10 == 0:
-            print(f'Evaluated {index+1}/{len(rows)} held-out examples',flush=True)
+            print(f'Evaluated {index+1}/{len(rows)} {args.split} examples',flush=True)
     def metrics(items):
         if not items:
             return None
@@ -75,11 +82,13 @@ def main():
         json.loads(r['raw'])['model_slug']==json.loads(reversed_rows[r['index']]['raw'])['model_slug'] for r in original)
     report = {'model':args.model,'split':args.split,'partial':bool(args.limit),
         'candidate_order_agreement_rate':consistent/len(original),
-        'label_meaning':'Agreement with synthetic MVP policy, not measured candidate performance',
+        'dataset_sha256':hashlib.sha256(split_path.read_bytes()).hexdigest(),
+        'label_meaning':'Agreement with the deterministic profile policy, not measured candidate performance',
         'original':metrics(original),'anonymous':metrics([r for r in original if r['anonymous']]),
         'reversed':metrics([r for r in outcomes if r['variant']=='reversed']),
         'winner_removed':metrics([r for r in outcomes if r['variant']=='winner_removed']),
-        'families':{f:metrics([r for r in original if r['family']==f]) for f in sorted({r['family'] for r in original})},
+        'categories':{category:metrics([r for r in original if r['category']==category])
+            for category in sorted({r['category'] for r in original})},
         'outcomes':outcomes}
     args.report.parent.mkdir(parents=True,exist_ok=True)
     args.report.write_text(json.dumps(report,indent=2))

@@ -1,0 +1,303 @@
+{
+  "version": 1,
+  "profile_version": "benchmark-v1-20260919T110437Z-272c",
+  "categories": [
+    {
+      "id": "coding",
+      "requirements": {
+        "reasoning": 0.75,
+        "coding": 0.95,
+        "tool_use": 0.8,
+        "document_qa": 0.1,
+        "structured_output": 0.75,
+        "instruction_following": 0.85,
+        "long_context": 0.3
+      },
+      "requires_tools": true,
+      "tasks": [
+        {"family_id": "coding-01", "split": "train", "text": "Repair a Python CSV importer that skips quoted multiline fields, add regression tests, and run the focused test file."},
+        {"family_id": "coding-02", "split": "train", "text": "Implement cursor pagination for a TypeScript HTTP endpoint and verify boundary behavior with automated tests."},
+        {"family_id": "coding-03", "split": "train", "text": "Find the race in a background job queue, write a test that reproduces it, and apply the smallest safe fix."},
+        {"family_id": "coding-04", "split": "train", "text": "Correct a SQL migration whose rollback loses indexes, then exercise both upgrade and downgrade paths locally."},
+        {"family_id": "coding-05", "split": "train", "text": "Add cancellation support to a Go worker pool without leaking goroutines and run the package tests."},
+        {"family_id": "coding-06", "split": "train", "text": "Fix a React form that submits stale state after rapid edits and cover the behavior with a component test."},
+        {"family_id": "coding-07", "split": "train", "text": "Update a Rust parser to reject duplicate keys while preserving useful error locations, then run its test suite."},
+        {"family_id": "coding-08", "split": "validation", "text": "Diagnose why a Java cache returns expired values under concurrent access and add a regression test for the fix."},
+        {"family_id": "coding-09", "split": "validation", "text": "Make a shell command wrapper preserve child exit codes and stderr, with tests for success and failure cases."},
+        {"family_id": "coding-10", "split": "test", "text": "Repair a Kotlin JSON decoder that confuses missing fields with explicit nulls and verify both cases."}
+      ]
+    },
+    {
+      "id": "education",
+      "requirements": {
+        "reasoning": 0.82,
+        "coding": 0.15,
+        "tool_use": 0.15,
+        "document_qa": 0.45,
+        "structured_output": 0.55,
+        "instruction_following": 0.9,
+        "long_context": 0.35
+      },
+      "tasks": [
+        {"family_id": "education-01", "split": "train", "text": "Explain photosynthesis to a twelve-year-old using one analogy, then ask two questions that check understanding."},
+        {"family_id": "education-02", "split": "train", "text": "Create a forty-minute lesson plan that introduces fractions through paper folding and includes an exit ticket."},
+        {"family_id": "education-03", "split": "train", "text": "Show a student where their quadratic-equation solution went wrong without supplying the final answer immediately."},
+        {"family_id": "education-04", "split": "train", "text": "Compare mitosis and meiosis in a table suitable for an introductory biology revision sheet."},
+        {"family_id": "education-05", "split": "train", "text": "Write a short practice set on subject-verb agreement with answers and one-line explanations."},
+        {"family_id": "education-06", "split": "train", "text": "Turn a chapter about plate tectonics into spaced-repetition prompts ordered from recall to application."},
+        {"family_id": "education-07", "split": "train", "text": "Explain why correlation does not prove causation using a school attendance example and no statistical jargon."},
+        {"family_id": "education-08", "split": "validation", "text": "Design a simple classroom experiment for evaporation that states variables, controls, and expected observations."},
+        {"family_id": "education-09", "split": "validation", "text": "Give constructive feedback on a history paragraph whose claim is clear but whose evidence is weak."},
+        {"family_id": "education-10", "split": "test", "text": "Teach the difference between area and perimeter through a worked example and one independent exercise."}
+      ]
+    },
+    {
+      "id": "safe_finance",
+      "requirements": {
+        "reasoning": 0.88,
+        "coding": 0.1,
+        "tool_use": 0.15,
+        "document_qa": 0.45,
+        "structured_output": 0.75,
+        "instruction_following": 0.9,
+        "long_context": 0.35
+      },
+      "tasks": [
+        {"family_id": "safe-finance-01", "split": "train", "text": "Compare two savings accounts using their stated rates and fees, and show the one-year arithmetic without recommending a provider."},
+        {"family_id": "safe-finance-02", "split": "train", "text": "Build a monthly household budget from the supplied income and bills, leaving a clearly labeled contingency amount."},
+        {"family_id": "safe-finance-03", "split": "train", "text": "Explain how credit-card minimum payments affect payoff time using a small hypothetical balance."},
+        {"family_id": "safe-finance-04", "split": "train", "text": "Calculate simple and compound interest on the same fictional deposit and explain why the totals differ."},
+        {"family_id": "safe-finance-05", "split": "train", "text": "Organize a list of expenses into fixed, variable, and discretionary categories without giving investment advice."},
+        {"family_id": "safe-finance-06", "split": "train", "text": "Estimate the emergency fund implied by three months of listed essential expenses and state the assumptions."},
+        {"family_id": "safe-finance-07", "split": "train", "text": "Compare the total stated costs of renting and buying a laptop under two fictional payment plans."},
+        {"family_id": "safe-finance-08", "split": "validation", "text": "Check a loan amortization example for arithmetic errors and return a corrected first-three-payment table."},
+        {"family_id": "safe-finance-09", "split": "validation", "text": "Explain inflation's effect on purchasing power with a hypothetical grocery basket over two years."},
+        {"family_id": "safe-finance-10", "split": "test", "text": "Turn a fictional payslip into a plain-language breakdown of gross pay, deductions, and net pay."}
+      ]
+    },
+    {
+      "id": "documents",
+      "requirements": {
+        "reasoning": 0.65,
+        "coding": 0.15,
+        "tool_use": 0.85,
+        "document_qa": 0.95,
+        "structured_output": 0.9,
+        "instruction_following": 0.95,
+        "long_context": 0.65
+      },
+      "requires_tools": true,
+      "input_tokens": 24000,
+      "tasks": [
+        {"family_id": "documents-01", "split": "train", "text": "Read the supplied lease and produce a memo listing renewal dates, notice periods, and the clause supporting each item."},
+        {"family_id": "documents-02", "split": "train", "text": "Compare two policy drafts, preserve their heading structure, and write a change log with section references."},
+        {"family_id": "documents-03", "split": "train", "text": "Extract decisions and owners from meeting minutes into a formatted action register, then verify the saved document."},
+        {"family_id": "documents-04", "split": "train", "text": "Revise a grant proposal for consistency while keeping all tables, citations, and quoted figures unchanged."},
+        {"family_id": "documents-05", "split": "train", "text": "Turn interview notes into a concise candidate summary that separates direct evidence from the reviewer's interpretation."},
+        {"family_id": "documents-06", "split": "train", "text": "Create an accessible handbook page from the supplied procedure, retaining warnings and numbered steps."},
+        {"family_id": "documents-07", "split": "train", "text": "Review a contract appendix and produce a requirements checklist with exact source-page references."},
+        {"family_id": "documents-08", "split": "validation", "text": "Consolidate three project briefs into one document and flag contradictions instead of silently resolving them."},
+        {"family_id": "documents-09", "split": "validation", "text": "Convert a dense committee report into a two-page briefing while preserving every recorded vote and dissent."},
+        {"family_id": "documents-10", "split": "test", "text": "Audit a user guide against a supplied style sheet, apply the required edits, and verify the exported file."}
+      ]
+    },
+    {
+      "id": "research",
+      "requirements": {
+        "reasoning": 0.88,
+        "coding": 0.2,
+        "tool_use": 0.85,
+        "document_qa": 0.9,
+        "structured_output": 0.75,
+        "instruction_following": 0.9,
+        "long_context": 0.75
+      },
+      "requires_tools": true,
+      "input_tokens": 48000,
+      "tasks": [
+        {"family_id": "research-01", "split": "train", "text": "Find primary sources on urban tree-canopy measurement and summarize how each study defines canopy coverage."},
+        {"family_id": "research-02", "split": "train", "text": "Compare official guidance on household battery recycling across three jurisdictions and cite each rule."},
+        {"family_id": "research-03", "split": "train", "text": "Trace the origin of a quoted public-health statistic and report whether the original source supports the claim."},
+        {"family_id": "research-04", "split": "train", "text": "Review recent papers on retrieval evaluation and tabulate the datasets, metrics, and stated limitations."},
+        {"family_id": "research-05", "split": "train", "text": "Investigate the historical dates given for a local landmark using archives, noting unresolved conflicts."},
+        {"family_id": "research-06", "split": "train", "text": "Compare public specifications for three open file formats and identify differences in metadata support."},
+        {"family_id": "research-07", "split": "train", "text": "Find official accessibility requirements for captions and produce a cited checklist for recorded lectures."},
+        {"family_id": "research-08", "split": "validation", "text": "Check whether a popular claim about sleep duration matches the conclusions of the cited clinical guideline."},
+        {"family_id": "research-09", "split": "validation", "text": "Summarize primary evidence on heat-pump performance in cold climates and distinguish measurements from projections."},
+        {"family_id": "research-10", "split": "test", "text": "Compare official open-data licensing terms and identify which permit commercial redistribution with attribution."}
+      ]
+    },
+    {
+      "id": "office_work",
+      "requirements": {
+        "reasoning": 0.65,
+        "coding": 0.1,
+        "tool_use": 0.8,
+        "document_qa": 0.7,
+        "structured_output": 0.85,
+        "instruction_following": 0.95,
+        "long_context": 0.35
+      },
+      "requires_tools": true,
+      "tasks": [
+        {"family_id": "office-01", "split": "train", "text": "Turn the supplied status notes into a weekly update with progress, blockers, owners, and due dates."},
+        {"family_id": "office-02", "split": "train", "text": "Draft an agenda from five submitted topics, allot forty-five minutes, and put decision items first."},
+        {"family_id": "office-03", "split": "train", "text": "Reconcile two attendee lists, remove duplicates, and save a clean list with unmatched entries flagged."},
+        {"family_id": "office-04", "split": "train", "text": "Prepare a handover note that maps ongoing tasks to owners, deadlines, and the location of supporting files."},
+        {"family_id": "office-05", "split": "train", "text": "Convert a shared inbox summary into a priority queue without inventing urgency or deadlines."},
+        {"family_id": "office-06", "split": "train", "text": "Create a room-booking schedule from the requests and highlight the two time conflicts for review."},
+        {"family_id": "office-07", "split": "train", "text": "Format a short operating procedure from rough notes and add a revision table without changing the steps."},
+        {"family_id": "office-08", "split": "validation", "text": "Build a decision log from the supplied email thread with dates, participants, and links to source messages."},
+        {"family_id": "office-09", "split": "validation", "text": "Summarize quarterly objectives into a one-page review that distinguishes completed work from planned work."},
+        {"family_id": "office-10", "split": "test", "text": "Create a fair interview schedule from availability windows and clearly list candidates who could not be placed."}
+      ]
+    },
+    {
+      "id": "everyday_requests",
+      "requirements": {
+        "reasoning": 0.55,
+        "coding": 0.05,
+        "tool_use": 0.15,
+        "document_qa": 0.2,
+        "structured_output": 0.5,
+        "instruction_following": 0.9,
+        "long_context": 0.15
+      },
+      "tasks": [
+        {"family_id": "everyday-01", "split": "train", "text": "Plan five vegetarian packed lunches that share ingredients and can be prepared in under an hour."},
+        {"family_id": "everyday-02", "split": "train", "text": "Write a polite message asking a neighbor to lower late-night music without sounding accusatory."},
+        {"family_id": "everyday-03", "split": "train", "text": "Create a weekend packing checklist for a rainy city trip with one formal dinner."},
+        {"family_id": "everyday-04", "split": "train", "text": "Suggest a simple rotation for four people sharing kitchen cleaning duties over one month."},
+        {"family_id": "everyday-05", "split": "train", "text": "Turn a list of pantry items into two dinner ideas and name any missing staple for each."},
+        {"family_id": "everyday-06", "split": "train", "text": "Draft a brief invitation for a casual board-game evening that asks guests about dietary needs."},
+        {"family_id": "everyday-07", "split": "train", "text": "Make a thirty-minute morning routine from the supplied tasks, including five minutes of buffer."},
+        {"family_id": "everyday-08", "split": "validation", "text": "Help divide six moving-day jobs among three friends based on the listed restrictions."},
+        {"family_id": "everyday-09", "split": "validation", "text": "Write instructions for watering houseplants during a one-week absence using the provided plant list."},
+        {"family_id": "everyday-10", "split": "test", "text": "Create a low-effort study-break plan for an afternoon with three ninety-minute work blocks."}
+      ]
+    },
+    {
+      "id": "reasoning",
+      "requirements": {
+        "reasoning": 0.98,
+        "coding": 0.15,
+        "tool_use": 0.1,
+        "document_qa": 0.2,
+        "structured_output": 0.65,
+        "instruction_following": 0.8,
+        "long_context": 0.25
+      },
+      "tasks": [
+        {"family_id": "reasoning-01", "split": "train", "text": "Determine which of four statements can all be true given the supplied ordering constraints, and show the deduction."},
+        {"family_id": "reasoning-02", "split": "train", "text": "Calculate how many tiles a stepped pattern needs at stage twenty and derive the general rule."},
+        {"family_id": "reasoning-03", "split": "train", "text": "Find the shortest valid delivery route under the listed one-way and time-window constraints."},
+        {"family_id": "reasoning-04", "split": "train", "text": "Check whether the conclusion follows from three quantified premises and provide a counterexample if it does not."},
+        {"family_id": "reasoning-05", "split": "train", "text": "Solve a mixture problem with two concentrations, showing the conservation equation and a unit check."},
+        {"family_id": "reasoning-06", "split": "train", "text": "Infer the missing value in a number grid and explain why the same rule fits every row."},
+        {"family_id": "reasoning-07", "split": "train", "text": "Schedule five talks across two rooms while respecting speaker conflicts and minimizing unused gaps."},
+        {"family_id": "reasoning-08", "split": "validation", "text": "Evaluate a probability argument about drawing colored tokens without replacement and correct its first faulty step."},
+        {"family_id": "reasoning-09", "split": "validation", "text": "Work out which person owns each bicycle from the supplied clues and show a compact elimination table."},
+        {"family_id": "reasoning-10", "split": "test", "text": "Determine the break-even quantity for two fictional pricing plans and test the result on both sides of the boundary."}
+      ]
+    },
+    {
+      "id": "tools",
+      "requirements": {
+        "reasoning": 0.72,
+        "coding": 0.35,
+        "tool_use": 0.98,
+        "document_qa": 0.72,
+        "structured_output": 0.85,
+        "instruction_following": 0.92,
+        "long_context": 0.5
+      },
+      "requires_tools": true,
+      "tasks": [
+        {"family_id": "tools-01", "split": "train", "text": "Inspect the supplied image files, rename them from their visible labels, and produce a mapping of old to new names."},
+        {"family_id": "tools-02", "split": "train", "text": "Search the local notes for unresolved decisions, group them by project, and save a checked Markdown report."},
+        {"family_id": "tools-03", "split": "train", "text": "Read a directory of receipts, extract date and total, and flag files whose values cannot be verified."},
+        {"family_id": "tools-04", "split": "train", "text": "Run the provided command-line program on all fixtures and summarize failures with their exit codes."},
+        {"family_id": "tools-05", "split": "train", "text": "Compare the metadata of duplicate-looking photos and move no files until a hash-based duplicate list is complete."},
+        {"family_id": "tools-06", "split": "train", "text": "Inspect a web page and its linked policy PDF, then answer the question with links to both sources."},
+        {"family_id": "tools-07", "split": "validation", "text": "Extract tables from the supplied files, combine matching columns, and verify the final row count."},
+        {"family_id": "tools-08", "split": "test", "text": "Check a folder of audio transcripts against filenames and save a report of missing or mismatched items."},
+        {"family_id": "tools-09", "split": "test", "text": "Query the local database for overdue records and export only the requested fields to a new CSV file."},
+        {"family_id": "tools-10", "split": "test", "text": "Open the supplied presentation, find slides with broken image references, and list their slide numbers."}
+      ]
+    },
+    {
+      "id": "long_context",
+      "requirements": {
+        "reasoning": 0.78,
+        "coding": 0.1,
+        "tool_use": 0.35,
+        "document_qa": 0.88,
+        "structured_output": 0.7,
+        "instruction_following": 0.88,
+        "long_context": 0.98
+      },
+      "input_tokens": 180000,
+      "tasks": [
+        {"family_id": "long-context-01", "split": "train", "text": "Trace every change to the eligibility rule across the supplied policy archive and cite the effective date of each revision."},
+        {"family_id": "long-context-02", "split": "train", "text": "Compare all versions of a software manual and list commands whose documented behavior changed."},
+        {"family_id": "long-context-03", "split": "train", "text": "Build a chronology of a research program from annual reports, linking each milestone to its source section."},
+        {"family_id": "long-context-04", "split": "train", "text": "Find inconsistent definitions of the same term across a collection of standards and quote the relevant clauses."},
+        {"family_id": "long-context-05", "split": "train", "text": "Summarize recurring customer complaints across several years of support logs without losing low-frequency safety issues."},
+        {"family_id": "long-context-06", "split": "train", "text": "Identify all obligations assigned to one department across the supplied handbook and its appendices."},
+        {"family_id": "long-context-07", "split": "validation", "text": "Review a long legislative record and map each final provision to the amendment that introduced it."},
+        {"family_id": "long-context-08", "split": "test", "text": "Compare a full set of course catalogs and report prerequisites that changed without a matching course description update."},
+        {"family_id": "long-context-09", "split": "test", "text": "Analyze a multi-year incident archive for repeated contributing factors and cite every supporting record."},
+        {"family_id": "long-context-10", "split": "test", "text": "Reconcile names, dates, and totals across a collection of meeting packets and flag unresolved conflicts."}
+      ]
+    },
+    {
+      "id": "spreadsheets",
+      "requirements": {
+        "reasoning": 0.72,
+        "coding": 0.25,
+        "tool_use": 0.92,
+        "document_qa": 0.62,
+        "structured_output": 0.98,
+        "instruction_following": 0.92,
+        "long_context": 0.35
+      },
+      "requires_tools": true,
+      "tasks": [
+        {"family_id": "spreadsheets-01", "split": "train", "text": "Clean a membership workbook, preserve formulas, remove exact duplicate rows, and verify the final totals."},
+        {"family_id": "spreadsheets-02", "split": "train", "text": "Build a monthly cash-flow sheet from the supplied transactions with formulas and a category summary."},
+        {"family_id": "spreadsheets-03", "split": "train", "text": "Repair broken cross-sheet references in a grade book and confirm that weighted scores recalculate correctly."},
+        {"family_id": "spreadsheets-04", "split": "train", "text": "Create a pivot summary and chart of library visits by branch and month from the source workbook."},
+        {"family_id": "spreadsheets-05", "split": "train", "text": "Merge two inventory sheets by product code and flag conflicting descriptions instead of overwriting them."},
+        {"family_id": "spreadsheets-06", "split": "train", "text": "Add data validation and conditional formatting to a booking tracker while keeping existing formulas intact."},
+        {"family_id": "spreadsheets-07", "split": "validation", "text": "Calculate survey response rates by group in a new summary tab and check the denominator for missing entries."},
+        {"family_id": "spreadsheets-08", "split": "test", "text": "Turn raw time entries into a weekly utilization report with formulas that remain correct when rows are added."},
+        {"family_id": "spreadsheets-09", "split": "test", "text": "Audit a price-comparison workbook for inconsistent units and create a normalized cost column."},
+        {"family_id": "spreadsheets-10", "split": "test", "text": "Create a loan schedule from the stated terms and verify the ending balance against rounding drift."}
+      ]
+    },
+    {
+      "id": "simple_editing",
+      "requirements": {
+        "reasoning": 0.25,
+        "coding": 0.05,
+        "tool_use": 0.05,
+        "document_qa": 0.2,
+        "structured_output": 0.35,
+        "instruction_following": 0.82,
+        "long_context": 0.1
+      },
+      "tasks": [
+        {"family_id": "editing-01", "split": "train", "text": "Rewrite this reminder in a polite tone while keeping it under thirty words."},
+        {"family_id": "editing-02", "split": "train", "text": "Correct the spelling and punctuation in a three-sentence notice without changing its meaning."},
+        {"family_id": "editing-03", "split": "train", "text": "Shorten the supplied update to two sentences and retain both dates."},
+        {"family_id": "editing-04", "split": "train", "text": "Turn four rough bullet points into one clear paragraph with no new claims."},
+        {"family_id": "editing-05", "split": "train", "text": "Suggest a specific subject line for the supplied scheduling email."},
+        {"family_id": "editing-06", "split": "train", "text": "Change a formal announcement into friendly plain language while preserving the deadline."},
+        {"family_id": "editing-07", "split": "validation", "text": "Remove repeated information from a short biography and keep the result under eighty words."},
+        {"family_id": "editing-08", "split": "test", "text": "Rewrite an error message so it states what happened and the next action in one sentence."},
+        {"family_id": "editing-09", "split": "test", "text": "Convert a passive two-sentence instruction into direct active voice."},
+        {"family_id": "editing-10", "split": "test", "text": "Make the supplied thank-you note warmer without adding praise that was not in the original."}
+      ]
+    }
+  ]
+}
