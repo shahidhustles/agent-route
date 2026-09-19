@@ -12,8 +12,8 @@ The end-sem project will extend this foundation from model routing to routing be
 
 ## 1. Choose the candidate models
 
-- [ ] Select two to four models that can be run reliably on the available hardware.
-- [ ] Assign every model a stable `model_slug`.
+- [x] Select two candidates available through Zen.
+- [x] Assign every model a stable `model_slug`.
 - [ ] Record the exact model and checkpoint version.
 - [ ] Record the quantization format and level.
 - [ ] Record the inference engine and serving configuration.
@@ -27,8 +27,8 @@ The end-sem project will extend this foundation from model routing to routing be
 
 ## 2. Build the model benchmarking engine
 
-- [ ] Define a common benchmark-task schema.
-- [ ] Define a common model-adapter interface.
+- [x] Define a common benchmark-task schema.
+- [x] Define a common model-adapter interface.
 - [ ] Add benchmark tasks for reasoning.
 - [ ] Add benchmark tasks for coding.
 - [ ] Add benchmark tasks for tool use.
@@ -36,14 +36,14 @@ The end-sem project will extend this foundation from model routing to routing be
 - [ ] Add benchmark tasks for structured output.
 - [ ] Add benchmark tasks for instruction following.
 - [ ] Add benchmark tasks for long-context handling.
-- [ ] Run exactly the same tasks and scoring rules on every candidate model.
-- [ ] Measure correctness or task success.
+- [x] Run exactly the same tasks and scoring rules on every candidate model.
+- [x] Measure correctness or task success.
 - [ ] Measure time to first token and total latency.
-- [ ] Measure output tokens per second.
+- [x] Measure output tokens per second.
 - [ ] Measure peak VRAM usage.
 - [ ] Measure usable context length.
 - [ ] Record tool-calling and multimodal support.
-- [ ] Save raw requests, responses, timings, scores, errors, and run metadata.
+- [x] Save raw requests, responses, timings, scores, errors, and run metadata.
 
 ### Completion criteria
 
@@ -149,14 +149,14 @@ The end-sem project will extend this foundation from model routing to routing be
 
 ## 8. Implement routing baselines
 
-- [ ] Random selection.
-- [ ] Round-robin selection.
-- [ ] Static rule-based selection.
-- [ ] Existing heuristic router.
-- [ ] Learned router.
-- [ ] Oracle selection based on known benchmark outcomes.
-- [ ] Expose every strategy through the same routing interface.
-- [ ] Make random behavior reproducible with a recorded seed.
+- [x] Random selection.
+- [x] Round-robin selection.
+- [x] Static rule-based selection.
+- [x] Existing heuristic router.
+- [x] Learned router interface. Full downstream run pending.
+- [x] Oracle selection based on known benchmark outcomes.
+- [x] Expose every strategy through the same routing interface.
+- [x] Make random behavior reproducible with a recorded seed.
 
 ### Completion criteria
 
@@ -165,7 +165,7 @@ The end-sem project will extend this foundation from model routing to routing be
 
 ## 9. Run end-to-end routing evaluation
 
-- [ ] Create a fixed evaluation workload.
+- [x] Create a fixed evaluation workload.
 - [ ] Route each task using every routing strategy.
 - [ ] Execute the task on the selected primary model.
 - [ ] Score downstream task success.
@@ -201,15 +201,15 @@ The end-sem project will extend this foundation from model routing to routing be
 
 The live demonstration should show this sequence:
 
-- [ ] A user enters a task.
-- [ ] The router receives the task and measured candidate profiles.
-- [ ] Hard constraints remove incompatible models.
-- [ ] The learned router selects a model.
-- [ ] The terminal or UI shows the selected model, confidence, reason or evidence, and routing time.
-- [ ] The selected model executes the task.
-- [ ] The output and execution metrics are displayed.
-- [ ] A dashboard or report compares learned routing with at least one baseline.
-- [ ] A prepared fallback recording or saved run is available if live inference fails.
+- [x] A user enters one of the prepared audited tasks.
+- [x] The router receives the task and measured candidate profiles.
+- [x] Hard constraints remove incompatible models.
+- [ ] The learned router selects a model. The saved demo currently uses the profile heuristic.
+- [x] The terminal shows the selected model, confidence, evidence, and routing time.
+- [x] A saved Zen execution supplies the model response.
+- [x] The output and execution metrics are displayed.
+- [x] The terminal report compares the completed strategies and marks learned pending.
+- [x] A saved run is available if live inference fails.
 
 ### Completion criteria
 
@@ -262,4 +262,3 @@ The live demonstration should show this sequence:
 - [ ] Held-out test complete
 - [ ] Mid-sem demo complete
 - [ ] Review material complete
-

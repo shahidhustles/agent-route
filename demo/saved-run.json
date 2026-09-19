@@ -1,0 +1,74 @@
+{
+  "profile_version": "benchmark-v1-20260919T110437Z-272c",
+  "benchmark_version": "v1-20260919T110437Z-272c",
+  "candidates": ["glm-5.3-flash", "deepseek-v4.1-flash"],
+  "examples": [
+    {
+      "id": "fast",
+      "label": "Short calculation favors measured throughput",
+      "selection_reason": "Both candidates satisfy the task. DeepSeek has 35.74 measured tokens per second versus GLM's 6.72.",
+      "max_tokens": 128,
+      "request": {
+        "user_task": "What is the sum of the squares of integers from 1 to 5? Reply with the number only.",
+        "candidate_models": ["glm-5.3-flash", "deepseek-v4.1-flash"],
+        "profiles": [],
+        "requires_tools": false,
+        "input_tokens": 52
+      },
+      "execution": {
+        "deepseek-v4.1-flash": {
+          "response": "55",
+          "passed": true,
+          "latency_ms": 1724,
+          "prompt_tokens": 52,
+          "completion_tokens": 36,
+          "token_rate": 20.881670534,
+          "request_cost_usd": 0.0000588,
+          "evidence": "benchmarking/results/v1-20260919T110437Z-272c/deepseek-v4.1-flash/c1-sum-squares.json"
+        }
+      }
+    },
+    {
+      "id": "quality",
+      "label": "Document QA with a 160 GB deployment limit",
+      "selection_reason": "The 160 GB limit removes DeepSeek's 640 GB target deployment. GLM remains eligible and has a 100% measured document-QA pass rate.",
+      "max_tokens": 64,
+      "request": {
+        "user_task": "MEMO: Q3 sales for the Aurora division reached $4.2M, up 12% from Q2. The Zenith division reported $3.1M, down 4%. Inventory costs rose to $1.8M overall.\n\nQuestion: What were Q3 sales for the Aurora division? Answer with the figure only.",
+        "candidate_models": ["glm-5.3-flash", "deepseek-v4.1-flash"],
+        "profiles": [],
+        "requires_tools": false,
+        "input_tokens": 82,
+        "available_vram_gb": 160
+      },
+      "execution": {
+        "glm-5.3-flash": {
+          "response": "$4.2M",
+          "passed": true,
+          "latency_ms": 2315,
+          "prompt_tokens": 82,
+          "completion_tokens": 7,
+          "token_rate": 3.023758099,
+          "request_cost_usd": 0.0000158,
+          "evidence": "benchmarking/results/v1-20260919T110437Z-272c/glm-5.3-flash/d1-sales-memo.json"
+        }
+      }
+    }
+  ],
+  "comparison": {
+    "status": "offline saved-evidence comparison",
+    "workload_items": 70,
+    "paid_calls": 0,
+    "strategies": {
+      "random": { "success": 0.9142857143, "agreement": 0.5714285714 },
+      "round_robin": { "success": 0.8285714286, "agreement": 0.5 },
+      "static_rule": { "success": 0.9428571429, "agreement": 1.0 },
+      "heuristic": { "success": 0.9142857143, "agreement": 0.8571428571 },
+      "oracle": { "success": 0.9428571429, "agreement": 0.6571428571 }
+    },
+    "learned": {
+      "status": "pending",
+      "reason": "complete merged checkpoint is not stored in the repository"
+    }
+  }
+}

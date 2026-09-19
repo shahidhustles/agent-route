@@ -39,7 +39,7 @@ export type ModelProfile = Readonly<{
   }>;
 }>;
 
-export const PROFILE_VERSION = "mvp-static-v1";
+export const PROFILE_VERSION = "benchmark-v1-20260919T110437Z-272c";
 
 export const MVP_MODEL_PROFILES = [
   {

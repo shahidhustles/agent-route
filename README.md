@@ -1,10 +1,10 @@
 # EDI Model Router
 
-This repository contains the EDI model router, its training and evaluation pipeline, profile and registry contracts, and tests.
+This repository contains the mid-sem model router, its Zen benchmark, Qwen3-0.6B training pipeline, routing-strategy comparison, and offline review demo.
 
-The current learned router fine-tunes Qwen3-0.6B to choose one candidate model from a task and a set of model profiles. The runtime enforces tool-use and context-window constraints before inference, validates the returned slug, falls back deterministically when the local router is unavailable, and keeps the selected model fixed for a session.
+The measured candidates are `glm-5.3-flash` and `deepseek-v4.1-flash`. The runtime filters tool, context, and VRAM constraints before selection. The mid-sem work routes between models. Heterogeneous agent routing remains end-sem work.
 
-Start with [PROJECT_STATUS.md](PROJECT_STATUS.md) for the project scope and [MID_SEM_CHECKLIST.md](MID_SEM_CHECKLIST.md) for the ordered implementation plan. The missing primary-model benchmark is specified in [benchmarking/README.md](benchmarking/README.md).
+Start with [PROJECT_STATUS.md](PROJECT_STATUS.md) for the honest completion state. The review flow is in [demo/README.md](demo/README.md).
 
 ## Project map
 
@@ -12,13 +12,15 @@ Start with [PROJECT_STATUS.md](PROJECT_STATUS.md) for the project scope and [MID
 edi-model-router/
   runtime.ts                 learned-router client and session selection
   router.ts                  heuristic baseline
-  profiles.ts                provisional built-in profiles
+  profiles.ts                measured Zen profiles
   registry.ts                endpoint and profile registry schema
   registry.example.json      sample candidate registry
   training-profiles.json     training-time profile snapshot
   training/                  data, LoRA training, serving, and evaluation
-  benchmarking/              contract for the missing benchmark engine
-  evaluation.md              accepted checkpoint results and limits
+  benchmarking/              versioned Zen benchmark and saved evidence
+  evaluation/                frozen workload, policies, cache, and reports
+  demo/                      saved review playback and instructions
+  evaluation.md              current and prior evaluation limits
 ```
 
 ## Install and verify
@@ -39,6 +41,16 @@ python -m unittest discover -s training -p 'test_*.py'
 ```
 
 See [training/README.md](training/README.md) for environment setup, dataset generation, LoRA training, evaluation, and local serving.
+
+## Review demo
+
+The default demo is offline and cannot spend Zen credits:
+
+```sh
+bun run demo
+```
+
+It presents both measured profiles, two opposite model selections, saved model responses and execution metrics, and the offline strategy comparison. See [demo/README.md](demo/README.md) for the prepared cases and Colab command.
 
 ## Router service
 
@@ -64,14 +76,14 @@ const result = await route({
 });
 ```
 
-`registry.example.json` shows how to associate profiles with OpenAI-compatible endpoints. Its ports, served-model IDs, capability scores, and hardware values are samples, not measurements.
+`registry.example.json` shows how to associate profiles with OpenAI-compatible endpoints. Its local ports and served-model IDs are examples.
 
 ## Current evidence
 
-The accepted checkpoint reached 82.875% exact route accuracy on the synthetic validation split. It produced valid JSON for every validation case, but the original wrapper rejected six hard-constraint violations. The held-out test split remains untouched.
+The refined checkpoint reached 82.875% policy agreement on the validation split. The frozen downstream comparison reuses 70 saved model outcomes and makes no paid calls. Random, round-robin, static-rule, heuristic, and oracle results are available. The learned downstream comparison and held-out test remain pending because the repository does not contain a complete merged checkpoint.
 
-That result measures agreement with the synthetic teacher. It does not measure downstream task success or prove that the placeholder model profiles are accurate. Read [evaluation.md](evaluation.md) before using the number in a review.
+The 82.875% figure measures agreement with the deterministic profile policy, not downstream task success. Read [evaluation.md](evaluation.md) before using it in a review.
 
-## Dataset warning
+## Dataset scope
 
-The generator creates 8,000 examples from 42 templates. Most prompts vary industrial equipment names, so the data is heavily shaped by MRPL-style workflows. Keep those prompts as one domain, but add independently written, domain-neutral examples before retraining or making general routing claims.
+The generator uses 120 independently written task families across 12 domain-neutral categories. Families stay within one split. The held-out split remains sealed.
