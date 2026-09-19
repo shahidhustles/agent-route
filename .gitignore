@@ -1,0 +1,9 @@
+.venv/
+artifacts/
+data/
+__pycache__/
+*.pyc
+benchmarking/results/
+AGENTS.md
+.agents/skills/
+node_modules/
