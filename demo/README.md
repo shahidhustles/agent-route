@@ -46,6 +46,29 @@ bun run demo -- --example fast --live --allow-paid-call --max-cost-usd 0.001
 
 The demo estimates the maximum request cost before the call and stops if it exceeds the cap. Live and saved modes print the same fields.
 
+## Learned router on Modal
+
+Deploy the trained Qwen3-0.6B LoRA router:
+
+```sh
+scripts/setup-modal-router.sh
+```
+
+The wizard handles Modal login, deployment, endpoint protection, `.env.modal`, and a route-only smoke test.
+
+Set the deployed endpoint URL and proxy-token values, then start the paste-in flow:
+
+```sh
+export MODAL_ROUTER_URL=https://YOUR-ENDPOINT.modal.run
+export MODAL_PROXY_TOKEN_ID=wk-...
+export MODAL_PROXY_TOKEN_SECRET=ws-...
+bun run demo:interactive
+```
+
+The setup wizard stores these values in `.env.modal`. The package command loads that ignored file automatically, so later sessions only need `bun run demo:interactive`.
+
+The terminal prints the exact JSON sent to the learned router and the exact Zen request it would make. It does not call Zen unless you also pass `--execute-zen --allow-paid-call --max-cost-usd AMOUNT` and set both `ZEN_API_KEY` and `DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND`.
+
 ## Review sequence
 
 1. Point out GLM's document-QA score and DeepSeek's throughput.

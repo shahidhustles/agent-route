@@ -12,6 +12,7 @@
     "demo": "bun demo.ts",
     "demo:fast": "bun demo.ts --example fast",
     "demo:quality": "bun demo.ts --example quality",
+    "demo:interactive": "bun --env-file=.env.modal demo.ts --interactive",
     "evaluate": "python evaluation/run.py",
     "evaluation:report": "python evaluation/report.py",
     "lint": "oxlint *.ts && oxfmt --check *.ts *.json",

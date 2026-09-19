@@ -204,7 +204,7 @@ The live demonstration should show this sequence:
 - [x] A user enters one of the prepared audited tasks.
 - [x] The router receives the task and measured candidate profiles.
 - [x] Hard constraints remove incompatible models.
-- [ ] The learned router selects a model. The saved demo currently uses the profile heuristic.
+- [x] The learned Modal router selects a model in interactive mode. Saved playback uses the profile heuristic.
 - [x] The terminal shows the selected model, confidence, evidence, and routing time.
 - [x] A saved Zen execution supplies the model response.
 - [x] The output and execution metrics are displayed.

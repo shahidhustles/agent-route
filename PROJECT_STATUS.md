@@ -8,6 +8,7 @@
 - `training/` contains family-isolated data generation, Qwen3-0.6B LoRA training, inference, serving, evaluation, tests, and the Colab notebook.
 - `evaluation/` contains the 70-item workload, offline cache importer, reports, tests, and frozen artifact manifest.
 - `demo/` contains the no-cost saved playback and review instructions.
+- `training/modal_app.py` deploys the fine-tuned Qwen3-0.6B LoRA router on a protected Modal T4 endpoint. `bun run demo:interactive` sends arbitrary pasted tasks to it.
 
 ## Deliberately excluded
 
@@ -20,7 +21,7 @@
 - The saved Zen benchmark has 35 tasks per model across seven categories.
 - The refined router recorded 82.875% validation policy agreement. This is not downstream success.
 - The offline comparison reuses 70 model outcomes. It reports five strategies without spending new credits.
-- The learned downstream comparison is pending because the complete merged checkpoint is absent.
+- The learned router is deployed from the pinned base revision plus the trained adapter. The full learned downstream comparison remains pending.
 - The held-out test has not run.
 - A person still needs to record the fallback video.
 

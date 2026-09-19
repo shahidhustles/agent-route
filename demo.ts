@@ -1,4 +1,4 @@
-import { eligibleRequest, type RoutingRequest } from "./runtime";
+import { eligibleRequest, resultSchema, type RoutingRequest, type RoutingResult } from "./runtime";
 import {
   MODEL_SLUGS,
   MVP_MODEL_PROFILES,
@@ -10,7 +10,7 @@ import { routeModel } from "./router";
 
 type Execution = Readonly<{
   response: string;
-  passed: boolean;
+  passed: boolean | null;
   latency_ms: number;
   prompt_tokens: number;
   completion_tokens: number;
@@ -56,6 +56,11 @@ export function parseArgs(args: readonly string[]) {
     example: valueAfter("--example"),
     task: valueAfter("--task"),
     maxCostUsd: Number(valueAfter("--max-cost-usd") ?? 0),
+    routerUrl: valueAfter("--router-url") ?? process.env.MODAL_ROUTER_URL,
+    availableVramGb: Number(valueAfter("--available-vram-gb") ?? 0) || undefined,
+    requiresTools: args.includes("--requires-tools"),
+    interactive: args.includes("--interactive"),
+    executeZen: args.includes("--execute-zen"),
     live: args.includes("--live"),
     allowPaidCall: args.includes("--allow-paid-call"),
     help: args.includes("--help"),
@@ -115,17 +120,53 @@ function showComparison(saved: SavedRun): void {
   line("learned", `${saved.comparison.learned.status}: ${saved.comparison.learned.reason}`);
 }
 
+async function readTask(): Promise<string> {
+  process.stdout.write("Paste a task, then press Enter:\n> ");
+  for await (const line of console) {
+    if (line.trim()) return line.trim();
+    process.stdout.write("> ");
+  }
+  throw new Error("No task received on stdin");
+}
+
+export async function routeWithModal(
+  urlValue: string | undefined,
+  request: RoutingRequest,
+): Promise<RoutingResult> {
+  if (!urlValue) throw new Error("Interactive mode requires MODAL_ROUTER_URL or --router-url");
+  const url = new URL(urlValue);
+  if (url.protocol !== "https:" || !url.hostname.endsWith(".modal.run"))
+    throw new Error("Modal router URL must use HTTPS on modal.run");
+  const tokenId = process.env.MODAL_PROXY_TOKEN_ID;
+  const tokenSecret = process.env.MODAL_PROXY_TOKEN_SECRET;
+  if (!tokenId || !tokenSecret)
+    throw new Error("Set MODAL_PROXY_TOKEN_ID and MODAL_PROXY_TOKEN_SECRET");
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Modal-Key": tokenId,
+      "Modal-Secret": tokenSecret,
+    },
+    body: JSON.stringify(request),
+  });
+  if (!response.ok) throw new Error(`Modal router returned HTTP ${response.status}`);
+  const body = (await response.json()) as Record<string, unknown>;
+  return resultSchema.parse({ model_slug: body.model_slug, confidence: body.confidence });
+}
+
 async function executeLive(
-  example: SavedExample,
+  task: string,
+  maxTokens: number,
   modelSlug: ModelSlug,
   maxCostUsd: number,
+  expected?: string,
 ): Promise<Execution> {
   if (!process.env.ZEN_API_KEY) throw new Error("Live mode requires ZEN_API_KEY");
   const price =
     modelSlug === MODEL_SLUGS.glmFlash ? { input: 0.15, output: 0.5 } : { input: 0.3, output: 1.2 };
-  const inputUpperBound = new TextEncoder().encode(example.request.user_task).length;
-  const projectedCost =
-    (inputUpperBound * price.input + example.max_tokens * price.output) / 1_000_000;
+  const inputUpperBound = new TextEncoder().encode(task).length;
+  const projectedCost = (inputUpperBound * price.input + maxTokens * price.output) / 1_000_000;
   if (projectedCost > maxCostUsd)
     throw new Error(`Projected cost $${projectedCost.toFixed(7)} exceeds the supplied cap`);
   const started = performance.now();
@@ -135,13 +176,13 @@ async function executeLive(
       Authorization: `Bearer ${process.env.ZEN_API_KEY}`,
       "Content-Type": "application/json",
       "User-Agent": "agent-route-demo/1.0",
-      "x-opencode-session": `mid-sem-demo-${example.id}`,
+      "x-opencode-session": `mid-sem-demo-${crypto.randomUUID()}`,
     },
     body: JSON.stringify({
       model: modelSlug,
-      messages: [{ role: "user", content: example.request.user_task }],
+      messages: [{ role: "user", content: task }],
       temperature: 0,
-      max_tokens: example.max_tokens,
+      max_tokens: maxTokens,
     }),
   });
   if (!response.ok) throw new Error(`Zen returned HTTP ${response.status}`);
@@ -155,7 +196,7 @@ async function executeLive(
   const completionTokens = body.usage?.completion_tokens ?? 0;
   return {
     response: text,
-    passed: text.trim() === Object.values(example.execution)[0]?.response,
+    passed: expected === undefined ? null : text.trim() === expected,
     latency_ms: Math.round(latency),
     prompt_tokens: promptTokens,
     completion_tokens: completionTokens,
@@ -189,7 +230,13 @@ export async function runSavedDemo(options: ReturnType<typeof parseArgs>): Promi
     });
     const routingTime = performance.now() - started;
     const execution = options.live
-      ? await executeLive(example, selection.model_slug, options.maxCostUsd)
+      ? await executeLive(
+          example.request.user_task,
+          example.max_tokens,
+          selection.model_slug,
+          options.maxCostUsd,
+          Object.values(example.execution)[0]?.response,
+        )
       : example.execution[selection.model_slug];
     if (!execution) throw new Error(`No saved execution for ${selection.model_slug}`);
 
@@ -206,7 +253,10 @@ export async function runSavedDemo(options: ReturnType<typeof parseArgs>): Promi
     line("Reason", example.selection_reason);
     line("Routing time", `${routingTime.toFixed(3)} ms`);
     line("Response", execution.response);
-    line("Task score", execution.passed ? "pass" : "fail");
+    line(
+      "Task score",
+      execution.passed === null ? "not scored" : execution.passed ? "pass" : "fail",
+    );
     line("Token use", `${execution.prompt_tokens} input, ${execution.completion_tokens} output`);
     line("Zen latency", `${execution.latency_ms} ms`);
     line("Zen token rate", `${execution.token_rate.toFixed(3)} tok/s`);
@@ -216,12 +266,66 @@ export async function runSavedDemo(options: ReturnType<typeof parseArgs>): Promi
   showComparison(saved);
 }
 
+export async function runInteractiveDemo(options: ReturnType<typeof parseArgs>): Promise<void> {
+  const task = options.task?.trim() || (await readTask());
+  const request = eligibleRequest({
+    user_task: task,
+    candidate_models: [...DEMO_MODELS],
+    profiles: [...DEMO_PROFILES],
+    requires_tools: options.requiresTools,
+    input_tokens: Math.max(1, Math.ceil(task.length / 4)),
+    available_vram_gb: options.availableVramGb,
+  });
+  process.stdout.write("\nEXACT ROUTER REQUEST\n");
+  process.stdout.write(`${JSON.stringify(request, null, 2)}\n`);
+  const started = performance.now();
+  const selection = await routeWithModal(options.routerUrl, request);
+  const routingTime = performance.now() - started;
+  if (!request.candidate_models.includes(selection.model_slug))
+    throw new Error("Modal router selected an ineligible model");
+  const zenPayload = {
+    model: selection.model_slug,
+    messages: [{ role: "user", content: task }],
+    temperature: 0,
+    max_tokens: 256,
+  };
+  process.stdout.write("\nLEARNED ROUTER SELECTION\n");
+  line("Selected model", selection.model_slug);
+  line("Confidence", selection.confidence.toFixed(3));
+  line("Routing time", `${routingTime.toFixed(1)} ms`);
+  process.stdout.write("\nEXACT ZEN REQUEST\n");
+  process.stdout.write(`${JSON.stringify(zenPayload, null, 2)}\n`);
+  if (!options.executeZen) {
+    line("Zen execution", "skipped; add --execute-zen with paid-call guards");
+    return;
+  }
+  if (!options.allowPaidCall || process.env.DEMO_ALLOW_PAID_CALLS !== "I_UNDERSTAND")
+    throw new Error(
+      "Zen execution requires --allow-paid-call and DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND",
+    );
+  if (!Number.isFinite(options.maxCostUsd) || options.maxCostUsd <= 0)
+    throw new Error("Zen execution requires a positive --max-cost-usd cap");
+  const execution = await executeLive(
+    task,
+    256,
+    selection.model_slug as ModelSlug,
+    options.maxCostUsd,
+  );
+  line("Response", execution.response);
+  line("Task score", "not scored");
+  line("Token use", `${execution.prompt_tokens} input, ${execution.completion_tokens} output`);
+  line("Zen latency", `${execution.latency_ms} ms`);
+  line("Zen token rate", `${execution.token_rate.toFixed(3)} tok/s`);
+  line("Request cost", `$${execution.request_cost_usd.toFixed(7)}`);
+}
+
 function usage(): void {
   process.stdout.write(`Usage:
   bun run demo                         Play both prepared examples offline
   bun run demo -- --example fast      Play the DeepSeek example
   bun run demo -- --example quality   Play the GLM example
   bun run demo -- --task "<exact>"    Enter one prepared task verbatim
+  bun run demo -- --interactive        Paste any task and call the learned Modal router
 
 Saved playback is the default and never contacts Zen. Live mode requires explicit paid-call guards.
 `);
@@ -230,5 +334,6 @@ Saved playback is the default and never contacts Zen. Live mode requires explici
 if (import.meta.main) {
   const options = parseArgs(Bun.argv.slice(2));
   if (options.help) usage();
+  else if (options.interactive) await runInteractiveDemo(options);
   else await runSavedDemo(options);
 }

@@ -7,3 +7,4 @@ benchmarking/results/
 AGENTS.md
 .agents/skills/
 node_modules/
+.env.modal
