@@ -10,8 +10,10 @@
   },
   "scripts": {
     "demo": "bun demo.ts",
+    "evaluate": "python evaluation/run.py",
+    "evaluation:report": "python evaluation/report.py",
     "lint": "oxlint *.ts && oxfmt --check *.ts *.json",
-    "python:test": "python -m unittest discover -s training -p 'test_*.py' && python -m unittest discover -s benchmarking -p 'test_*.py'",
+    "python:test": "python -m unittest discover -s training -p 'test_*.py' && python -m unittest discover -s benchmarking -p 'test_*.py' && python -m unittest discover -s evaluation -p 'test_*.py'",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
   },

@@ -1,4 +1,36 @@
-# MVP evaluation
+# Routing strategy evaluation
+
+Ticket 03 adds the frozen 70-item workload and the six-policy evaluation runner. The workload contains two evaluation passes over 35 existing benchmark tasks, with ten items in each of seven categories, and records seed `20260919`. Both passes reference the same task IDs and decoding settings, so they reuse the 70 model outcomes saved by ticket 01. `evaluation/frozen-manifest.json` records the workload, profiles, checkpoint, strategies, scorer, and sealed test-data hashes before held-out evaluation.
+
+Run the validation comparison from the repository root:
+
+```bash
+python evaluation/run.py \
+  --checkpoint /path/to/merged-checkpoint \
+  --benchmark-run benchmarking/results/v1-20260919T110437Z-272c
+python evaluation/report.py
+```
+
+The default is offline-only. The first command imports the already-saved ticket 01 outcomes and stores them by benchmark version, task ID, model ID, and decoding settings under `evaluation/cache/`. Later strategies and reruns reuse those responses. A cache miss stops the run without contacting Zen. Paid calls require `--allow-paid-calls` and an explicit `--max-cost-usd` cap.
+
+The report separates policy agreement, downstream success, invalid output, hard-constraint violations, routing latency, Zen latency, token rate, calculated request cost, routing errors, and execution errors. It also writes per-category results and evidence paths.
+
+The repository does not contain a complete merged checkpoint, so `evaluation-summary.json` marks the learned-policy comparison as pending instead of presenting partial results as a finished experiment.
+
+Run the held-out router test once, after validation is accepted:
+
+```bash
+python training/evaluate.py \
+  --model /path/to/merged-checkpoint \
+  --split test \
+  --allow-held-out-test \
+  --artifact-manifest evaluation/frozen-manifest.json \
+  --report evaluation/held-out.json
+```
+
+The command checks the checkpoint and sealed test-data hashes first. It refuses to overwrite an existing held-out report.
+
+## Prior MVP evaluation
 
 The accepted checkpoint is Qwen3-0.6B with LoRA, merged with base revision `c1899de289a04d12100db370d81485cdf75e47ca`. Colab Tesla T4 training used 6400 examples for two epochs. The validation split contains 800 examples, with another 800 in the separate test split.
 

@@ -1,0 +1,43 @@
+{
+  "status": "frozen-before-held-out",
+  "benchmark_version": "v1",
+  "seed": 20260919,
+  "strategies": [
+    "random",
+    "round_robin",
+    "static_rule",
+    "heuristic",
+    "learned",
+    "oracle"
+  ],
+  "artifacts": {
+    "workload": {
+      "path": "evaluation/workload.jsonl",
+      "sha256": "6a5d014ec76a9e1a1fccc1a0f00c8af1684434facf12cff9747bcf3ddfde2fa2"
+    },
+    "profiles": {
+      "path": "training-profiles.json",
+      "sha256": "181496db3909acd4e5afec244d4d8795ff6b7d21b1f939ae3bc3cd9bef39d485"
+    },
+    "checkpoint": {
+      "path": "artifacts/qwen3-router-refined-portable",
+      "sha256": "ea2d13fb4f27681fd7733fc32698b37e1ba6acde5450a385ffef4b601ddbf903"
+    },
+    "strategies_python": {
+      "path": "evaluation/baselines.py",
+      "sha256": "86ad6776dbf54010d6445a484ff7db2661cd564b11b12f5ed1c3a44123908ba9"
+    },
+    "strategies_typescript": {
+      "path": "router.ts",
+      "sha256": "0484c03d7aa33974a1844d7e7d5d630d841a630f4be6614028e17d7c9b077e8f"
+    },
+    "scorers": {
+      "path": "benchmarking/scorers/__init__.py",
+      "sha256": "25e5d50ab4687d91483b420d45e226f233113892d33b2e16d4ed30bc238e56cf"
+    },
+    "held_out_data": {
+      "path": "data/test.jsonl",
+      "sha256": "8fad691402d42ca75380fabf5bc7b60d00898702b2ad1ab877dfed1c95c55949"
+    }
+  }
+}

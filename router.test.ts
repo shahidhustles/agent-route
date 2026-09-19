@@ -6,7 +6,13 @@ import {
   MVP_MODEL_PROFILES,
   type ModelSlug,
 } from "./profiles";
-import { routeModel, routeWithLoadFallback, type RouteEvent } from "./router";
+import {
+  ROUTING_STRATEGIES,
+  routeModel,
+  routeStrategy,
+  routeWithLoadFallback,
+  type RouteEvent,
+} from "./router";
 
 describe("routeModel", () => {
   test("returns only the model slug and confidence", () => {
@@ -99,6 +105,37 @@ describe("routeModel", () => {
       expect(profile.runtime.peak_vram_gb).toBeGreaterThan(0);
       expect(profile.runtime.usable_context).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("routeStrategy", () => {
+  test("all six strategies emit the same result shape", () => {
+    const candidates: readonly ModelSlug[] = [MODEL_SLUGS.glmFlash, MODEL_SLUGS.deepSeekFlash];
+    const outcomes = {
+      [MODEL_SLUGS.glmFlash]: { success: true, latency_ms: 900, cost_usd: 0.001 },
+      [MODEL_SLUGS.deepSeekFlash]: { success: false, latency_ms: 500, cost_usd: 0.0005 },
+    };
+    const results = ROUTING_STRATEGIES.map((strategy) =>
+      routeStrategy(strategy, {
+        task_id: "coding-1",
+        task: "Debug this TypeScript function",
+        category: "coding",
+        candidates,
+        index: 0,
+        random_value: 0.75,
+        learned: () => ({ model_slug: MODEL_SLUGS.glmFlash, confidence: 0.8 }),
+        outcomes,
+      }),
+    );
+
+    expect(results).toHaveLength(6);
+    for (const result of results) {
+      expect(Object.keys(result).sort()).toEqual(Object.keys(results[0]!).sort());
+      expect(candidates).toContain(result.model_slug);
+    }
+    expect(results.find((result) => result.strategy === "oracle")?.model_slug).toBe(
+      MODEL_SLUGS.glmFlash,
+    );
   });
 });
 

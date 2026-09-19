@@ -1,5 +1,6 @@
 import {
   getModelProfile,
+  MODEL_SLUGS,
   PROFILE_VERSION,
   type CapabilityScores,
   type ModelProfile,
@@ -9,6 +10,39 @@ import {
 export type RouteResult = Readonly<{
   model_slug: ModelSlug;
   confidence: number;
+}>;
+
+export const ROUTING_STRATEGIES = [
+  "random",
+  "round_robin",
+  "static_rule",
+  "heuristic",
+  "learned",
+  "oracle",
+] as const;
+
+export type RoutingStrategy = (typeof ROUTING_STRATEGIES)[number];
+
+export type StrategyRouteResult = RouteResult &
+  Readonly<{
+    strategy: RoutingStrategy;
+    reason: string;
+    routing_time_ms: number;
+    invalid_output: boolean;
+    constraint_violation: boolean;
+  }>;
+
+export type StrategyRouteInput = Readonly<{
+  task_id: string;
+  task: string;
+  category: string;
+  candidates: readonly ModelSlug[];
+  index: number;
+  random_value?: number;
+  learned?: () => RouteResult;
+  outcomes?: Readonly<
+    Partial<Record<ModelSlug, Readonly<{ success: boolean; latency_ms: number; cost_usd: number }>>>
+  >;
 }>;
 
 export type RouteEvent =
@@ -219,6 +253,105 @@ export function routeModel(
     model_slug: selected.modelSlug,
     confidence: routeConfidence(rankedModels),
   };
+}
+
+function checkedResult(
+  input: StrategyRouteInput,
+  strategy: RoutingStrategy,
+  select: () => RouteResult,
+  reason: string,
+): StrategyRouteResult {
+  const startedAt = performance.now();
+  let result: RouteResult;
+  let invalidOutput = false;
+  try {
+    result = select();
+    invalidOutput = !input.candidates.includes(result.model_slug);
+  } catch {
+    invalidOutput = true;
+    result = routeModel({ task: input.task, candidates: input.candidates });
+  }
+  if (invalidOutput) result = routeModel({ task: input.task, candidates: input.candidates });
+  return {
+    ...result,
+    strategy,
+    reason: invalidOutput ? `${reason}; invalid selection replaced by heuristic` : reason,
+    routing_time_ms: Number((performance.now() - startedAt).toFixed(3)),
+    invalid_output: invalidOutput,
+    constraint_violation: false,
+  };
+}
+
+/** Run any evaluated policy through one input and output contract. */
+export function routeStrategy(
+  strategy: RoutingStrategy,
+  input: StrategyRouteInput,
+): StrategyRouteResult {
+  validateCandidates(input.candidates);
+  const selectAt = (index: number): RouteResult => ({
+    model_slug: input.candidates[index % input.candidates.length]!,
+    confidence: 1 / input.candidates.length,
+  });
+
+  if (strategy === "random") {
+    const value = Math.min(Math.max(input.random_value ?? Math.random(), 0), 1 - Number.EPSILON);
+    return checkedResult(
+      input,
+      strategy,
+      () => selectAt(Math.floor(value * input.candidates.length)),
+      "seeded random draw",
+    );
+  }
+  if (strategy === "round_robin") {
+    return checkedResult(
+      input,
+      strategy,
+      () => selectAt(input.index),
+      "workload index modulo candidate count",
+    );
+  }
+  if (strategy === "static_rule") {
+    const qualityCategories = new Set(["reasoning", "coding", "document_qa", "long_context"]);
+    const preferred = qualityCategories.has(input.category)
+      ? MODEL_SLUGS.glmFlash
+      : MODEL_SLUGS.deepSeekFlash;
+    return checkedResult(
+      input,
+      strategy,
+      () => ({
+        model_slug: input.candidates.includes(preferred) ? preferred : input.candidates[0]!,
+        confidence: 0.7,
+      }),
+      "fixed category rule",
+    );
+  }
+  if (strategy === "heuristic") {
+    return checkedResult(input, strategy, () => routeModel(input), "existing profile heuristic");
+  }
+  if (strategy === "learned") {
+    if (!input.learned) throw new Error("Learned routing requires a learned callback");
+    return checkedResult(input, strategy, input.learned, "Qwen3 router checkpoint");
+  }
+  return checkedResult(
+    input,
+    strategy,
+    () => {
+      if (!input.outcomes) throw new Error("Oracle routing requires saved outcomes");
+      const ranked = input.candidates
+        .map((model_slug) => ({ model_slug, outcome: input.outcomes?.[model_slug] }))
+        .filter((item) => item.outcome !== undefined)
+        .sort(
+          (left, right) =>
+            Number(right.outcome!.success) - Number(left.outcome!.success) ||
+            left.outcome!.latency_ms - right.outcome!.latency_ms ||
+            left.outcome!.cost_usd - right.outcome!.cost_usd ||
+            left.model_slug.localeCompare(right.model_slug),
+        );
+      if (!ranked[0]) throw new Error("Oracle has no saved candidate outcomes");
+      return { model_slug: ranked[0].model_slug, confidence: 1 };
+    },
+    "best saved downstream outcome, then latency and cost",
+  );
 }
 
 export async function routeWithLoadFallback(

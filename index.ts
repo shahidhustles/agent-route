@@ -9,7 +9,17 @@ export {
   type ModelProfile,
   type ModelSlug,
 } from "./profiles";
-export { routeModel, routeWithLoadFallback, type RouteEvent, type RouteResult } from "./router";
+export {
+  ROUTING_STRATEGIES,
+  routeModel,
+  routeStrategy,
+  routeWithLoadFallback,
+  type RouteEvent,
+  type RouteResult,
+  type RoutingStrategy,
+  type StrategyRouteInput,
+  type StrategyRouteResult,
+} from "./router";
 export {
   createLocalRouter,
   selectSessionModel,

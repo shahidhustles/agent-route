@@ -12,19 +12,53 @@ from common import eligible, label, validate_output
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def hash_path(path):
+    """Hash one file or a directory tree without reading model data into memory."""
+    path = Path(path)
+    digest = hashlib.sha256()
+    files = [path] if path.is_file() else sorted(item for item in path.rglob('*') if item.is_file())
+    for item in files:
+        digest.update(str(item.relative_to(path.parent if path.is_file() else path)).encode())
+        with item.open('rb') as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b''):
+                digest.update(chunk)
+    return digest.hexdigest()
+
+
+def verify_frozen_artifacts(manifest_path, model_path, split_path):
+    manifest = json.loads(manifest_path.read_text())
+    expected = manifest.get('artifacts', {})
+    checks = {'checkpoint': hash_path(model_path), 'held_out_data': hash_path(split_path)}
+    for name, actual in checks.items():
+        if expected.get(name, {}).get('sha256') != actual:
+            raise ValueError(f'Frozen artifact hash mismatch: {name}')
+    return manifest
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', required=True)
     parser.add_argument('--split', choices=['validation','test'], default='validation')
     parser.add_argument('--allow-held-out-test', action='store_true')
+    parser.add_argument('--artifact-manifest', type=Path)
     parser.add_argument('--limit', type=int, default=0)
     parser.add_argument('--report', type=Path, required=True)
     args = parser.parse_args()
     if args.split == 'test' and not args.allow_held_out_test:
         parser.error('Opening the held-out test requires --allow-held-out-test after artifacts are frozen')
+    if args.split == 'test' and args.artifact_manifest is None:
+        parser.error('Held-out evaluation requires --artifact-manifest')
+    if args.split == 'test' and args.report.exists():
+        parser.error('Held-out report already exists; start a new frozen experiment instead of rerunning it')
+    split_path = ROOT/'data'/f'{args.split}.jsonl'
+    frozen_manifest = None
+    if args.split == 'test':
+        try:
+            frozen_manifest = verify_frozen_artifacts(args.artifact_manifest, args.model, split_path)
+        except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+            parser.error(str(error))
     from infer import Router
     router = Router(args.model)
-    split_path = ROOT/'data'/f'{args.split}.jsonl'
     rows = [json.loads(s) for s in split_path.read_text().splitlines()][:args.limit or None]
     outcomes = []
     for index, row in enumerate(rows):
@@ -81,6 +115,8 @@ def main():
     consistent = sum(r['valid'] and reversed_rows[r['index']]['valid'] and
         json.loads(r['raw'])['model_slug']==json.loads(reversed_rows[r['index']]['raw'])['model_slug'] for r in original)
     report = {'model':args.model,'split':args.split,'partial':bool(args.limit),
+        'frozen_artifact_manifest': str(args.artifact_manifest) if frozen_manifest else None,
+        'frozen_artifact_manifest_sha256': hash_path(args.artifact_manifest) if frozen_manifest else None,
         'candidate_order_agreement_rate':consistent/len(original),
         'dataset_sha256':hashlib.sha256(split_path.read_bytes()).hexdigest(),
         'label_meaning':'Agreement with the deterministic profile policy, not measured candidate performance',
