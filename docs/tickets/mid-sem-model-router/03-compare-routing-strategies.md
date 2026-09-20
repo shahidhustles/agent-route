@@ -26,7 +26,7 @@ Modify:
 - Freeze a balanced 50 to 100 task workload. Record the random seed.
 - Cache each execution by benchmark version, task ID, model ID, and decoding settings so strategies can reuse identical Zen results.
 - Define oracle selection from the saved per-model outcome for each task.
-- Report policy agreement, downstream task success, invalid output, constraint violations, routing latency, Zen execution latency, token rate, and errors separately.
+- Report policy agreement, downstream task success, invalid output, constraint violations, routing latency, Zen execution latency, token rate, calculated request cost, and errors separately.
 - Run the untouched held-out test once only after the workload, profiles, checkpoint, strategies, and scorers are frozen. Record their hashes first.
 
 ## Blocked by

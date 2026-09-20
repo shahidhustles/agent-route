@@ -2,7 +2,7 @@
 
 ## Goal
 
-Run one versioned benchmark against both free Zen models and turn the saved results into profiles that the router can consume.
+Run one versioned benchmark against both paid Zen models and turn the saved results into profiles that the router can consume.
 
 ## Files
 
@@ -26,9 +26,9 @@ Modify:
 
 ## Implementation notes
 
-- Benchmark `glm-5.3-flash` and `deepseek-v4.1-flash` (OpenCode Zen Go endpoint, `/zen/go/v1`) with identical cases and scorers. The originally planned `nemotron-3-ultra-free` / `nemotron-3.5-lightning-free` free models return `FreeTierError` outside the OpenCode client and cannot be called from an API key.
+- Benchmark `glm-5.3-flash` and `deepseek-v4.1-flash` through the configured OpenCode Zen endpoint with identical cases and scorers.
 - Read the Zen API key from an environment variable. Send a deterministic `x-opencode-session` value per benchmark conversation and redact authorization data from saved evidence.
-- Save each run in a new immutable directory with raw requests, responses, timings, token counts, errors, scores, model IDs, suite version, and timestamp. A rerun must not overwrite an earlier run.
+- Save each run in a new immutable directory with raw requests, responses, timings, token counts, calculated request costs, errors, scores, model IDs, suite version, and timestamp. A rerun must not overwrite an earlier run.
 - Cover the capability fields already used by the router. Capability values are category pass rates.
 - Add `target_deployment` to the profile contract. Declared planning assumptions (provider hardware is not public): 160 GB on 2 x NVIDIA H100 80 GB with FP8 for `glm-5.3-flash`, and 640 GB on 8 x NVIDIA H100 80 GB with FP8 for `deepseek-v4.1-flash`.
 - Add optional `available_vram_gb` to routing requests. Filter models that exceed it, alongside the existing tool and context filters.

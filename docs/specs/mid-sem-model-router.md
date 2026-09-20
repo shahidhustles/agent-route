@@ -2,28 +2,28 @@
 
 ## Goal
 
-Build a review-ready model routing system in two days. It benchmarks two free OpenCode Zen models, turns the results into model profiles, trains the existing Qwen3-0.6B router, and compares learned routing with fixed baselines.
+Build a review-ready model routing system in two days. It benchmarks two OpenCode Zen models, turns the results into model profiles, trains the existing Qwen3-0.6B router, and compares learned routing with fixed baselines.
 
 The review must prove a narrow claim: measured capability profiles can help a learned router choose between a faster model and a stronger model for a given task. The end-sem project will replace Zen execution with self-hosted models and extend model selection into heterogeneous agent routing.
 
 ## User flow
 
 1. The reviewer starts the benchmark or opens a saved benchmark run.
-2. The system shows profiles for `nemotron-3-ultra-free` and `nemotron-3.5-lightning-free`.
+2. The system shows profiles for `glm-5.3-flash` and `deepseek-v4.1-flash`.
 3. The reviewer enters a task and optional tool, context, and VRAM requirements.
 4. Hard constraints remove incompatible candidates.
 5. The learned router selects a model and reports its confidence, short reason, and routing time.
 6. The selected Zen model executes the task.
-7. The terminal shows the response, task score, latency, token rate, and selected profile.
+7. The terminal shows the response, task score, latency, token rate, request cost, and selected profile.
 8. A saved report compares the learned router with the baseline strategies on the frozen evaluation workload.
 
 ## Requirements
 
-- Use only the free Zen candidates `nemotron-3-ultra-free` and `nemotron-3.5-lightning-free`.
+- Use the paid Zen candidates `glm-5.3-flash` and `deepseek-v4.1-flash`.
 - Run benchmark, training, evaluation, and demo commands from Google Colab.
 - Read the Zen API key from a Colab secret or environment variable. Never write it to a notebook output, result file, or repository file.
 - Send a stable `x-opencode-session` value for each benchmark conversation. Retries of one case reuse its session value. Separate cases use separate values.
-- Save raw requests, responses, scores, timings, token counts, errors, model IDs, benchmark version, and run timestamp. Redact authentication headers.
+- Save raw requests, responses, scores, timings, token counts, calculated request costs, errors, model IDs, benchmark version, and run timestamp. Redact authentication headers.
 - Benchmark both models with the same prompts and scorers.
 - Cover reasoning, coding, tool use, document QA, structured output, instruction following, long context, and simple requests.
 - Use deterministic scoring where possible. Capability scores equal the pass rate for each category and remain within `0..1`.
@@ -45,7 +45,7 @@ The review must prove a narrow claim: measured capability profiles can help a le
 Add the engine under `benchmarking/` using the layout already proposed in `benchmarking/README.md`:
 
 - `run.py` runs a selected model or the full suite and can resume without overwriting an earlier run.
-- `adapters/zen.py` calls `https://opencode.ai/zen/v1/chat/completions` with the API key, user agent, and session header.
+- `adapters/zen.py` calls the configured OpenCode Zen endpoint, currently `https://opencode.ai/zen/go/v1`, with the API key, user agent, and session header.
 - `suites/` stores versioned JSONL cases and fixtures.
 - `scorers/` contains category scorers.
 - `build_profile.py` aggregates one run into the profile contract.
@@ -59,6 +59,7 @@ Update `profileSchema`, `ModelProfile`, the registry, and the Python validation 
 
 - measured capability pass rates;
 - measured API latency and output token rate;
+- token pricing and calculated request cost;
 - usable context established by the suite;
 - tool-calling and multimodal feature flags;
 - provider and model provenance;
@@ -68,8 +69,8 @@ Use these target deployment configurations for the mid-sem build:
 
 | Model | Planned role | Target accelerator | Quantization | VRAM budget |
 | --- | --- | --- | --- | ---: |
-| `nemotron-3-ultra-free` | Higher-quality reasoning and difficult tasks | 2 x NVIDIA H100 80 GB | FP8 | 160 GB |
-| `nemotron-3.5-lightning-free` | Fast, simple, structured, and latency-sensitive tasks | NVIDIA RTX 5090 32 GB | 4-bit | 32 GB |
+| `glm-5.3-flash` | Determined by measured profile | 2 x NVIDIA H100 80 GB | FP8 | 160 GB |
+| `deepseek-v4.1-flash` | Determined by measured profile | 8 x NVIDIA H100 80 GB | FP8 | 640 GB |
 
 Name this block `target_deployment` in stored profiles. Zen remains the execution provider for the mid-sem demo. End-sem work will update the block from the self-hosted serving configuration.
 
@@ -101,9 +102,9 @@ Prepare a short screen recording from the same clean-start flow used in the live
 - [ ] The router rejects candidates that violate tool, context, or available-VRAM constraints.
 - [ ] The learned router meets the agreed validation thresholds.
 - [ ] All six strategies run against the same frozen workload and emit the same result shape.
-- [ ] The report separates routing agreement, task success, routing latency, execution latency, throughput, and errors.
-- [ ] A user can enter a simple task and see Lightning selected when its profile is sufficient.
-- [ ] A user can enter a difficult task and see Ultra selected when its measured profile supports that choice.
+- [ ] The report separates routing agreement, task success, routing latency, execution latency, throughput, request cost, and errors.
+- [ ] Two prepared tasks produce different model selections for reasons visible in the generated profiles.
+- [ ] The displayed execution metrics include token use and calculated Zen request cost.
 - [ ] The terminal demo works from a clean start and has a saved-run fallback.
 - [ ] The held-out result is produced once after artifact hashes are recorded.
 - [ ] Tests, type checking, and linting pass.

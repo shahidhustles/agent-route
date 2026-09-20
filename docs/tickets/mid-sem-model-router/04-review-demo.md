@@ -19,8 +19,8 @@ Modify:
 
 ## Implementation notes
 
-- Print both profiles, eligible candidates after hard filtering, selected model, confidence, profile evidence, routing time, model response, task score, and execution metrics.
-- Include one simple example expected to favor Lightning and one difficult example expected to favor Ultra. Base the explanation on profile differences and constraints.
+- Print both profiles, eligible candidates after hard filtering, selected model, confidence, profile evidence, routing time, model response, task score, token use, calculated request cost, and execution metrics.
+- Choose two prepared examples that favor different models according to the final measured profiles. Base each explanation on visible profile differences and constraints.
 - Add a saved-run mode that completes the same presentation without a live Zen call.
 - Document a clean-start command for Colab and local playback.
 - Record a short fallback video after the final flow passes.
@@ -33,7 +33,7 @@ Modify:
 ## Done when
 
 - A reviewer can enter a task and see filtering, selection, execution, and metrics in one terminal flow.
-- The demo shows Lightning for a suitable simple task and Ultra for a suitable difficult task.
+- The demo uses `glm-5.3-flash` and `deepseek-v4.1-flash` and shows at least one justified selection of each.
 - Live and saved-run modes present the same fields and comparison summary.
 - The documented clean-start flow works within the review time limit.
 - Repository status, checklist, report, and demo use the same model names, profile version, checkpoint, and result values.
