@@ -8,6 +8,7 @@ import {
   ComposerPrimitive,
   ErrorPrimitive,
   MessagePrimitive,
+  ThreadListPrimitive,
   ThreadPrimitive,
   useAssistantDataUI,
   useAui,
@@ -50,13 +51,19 @@ export function RouterChat() {
       <RoutingDataRenderer />
       <main className="app-shell">
         <header className="topbar">
-          <div className="brand-mark" aria-hidden="true">
-            <Route size={18} strokeWidth={2} />
-          </div>
-          <div>
-            <p className="brand-name">Model Router</p>
-            <p className="brand-caption">Task-aware selection</p>
-          </div>
+          <ThreadListPrimitive.New
+            className="brand-home"
+            aria-label="Start a new chat"
+            title="Start a new chat"
+          >
+            <span className="brand-mark" aria-hidden="true">
+              <Route size={18} strokeWidth={2} />
+            </span>
+            <span>
+              <span className="brand-name">Model Router</span>
+              <span className="brand-caption">Task-aware selection</span>
+            </span>
+          </ThreadListPrimitive.New>
           <span className="live-badge">
             <span />
             Router online

@@ -51,6 +51,27 @@ button {
   backdrop-filter: blur(14px);
 }
 
+.brand-home {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 4px;
+  margin: -4px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.brand-home:hover {
+  background: #f5f6f4;
+}
+.brand-home:focus-visible {
+  outline: 2px solid #7da58f;
+  outline-offset: 2px;
+}
+
 .brand-mark,
 .empty-icon {
   display: grid;
@@ -66,6 +87,7 @@ button {
 }
 .brand-name,
 .brand-caption {
+  display: block;
   margin: 0;
 }
 .brand-name {
