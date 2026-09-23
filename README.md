@@ -52,7 +52,7 @@ bun run demo
 
 It presents both measured profiles, two opposite model selections, saved model responses and execution metrics, and the offline strategy comparison. See [demo/README.md](demo/README.md) for the prepared cases and Colab command.
 
-After deploying `training/modal_app.py`, `bun run demo:interactive` accepts any pasted task and sends it to the fine-tuned Qwen router. It prints the exact router request and Zen request before any optional paid model execution.
+After deploying `training/modal_app.py`, `bun run demo:interactive` starts the browser chat at `http://localhost:3000`. Each prompt goes to the fine-tuned Qwen router first. The selected model and confidence appear before the answer streams. The original terminal flow remains available through `bun run demo:cli`.
 
 ## Router service
 
