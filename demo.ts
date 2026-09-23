@@ -75,6 +75,15 @@ function line(label: string, value: unknown): void {
   process.stdout.write(`${label.padEnd(22)} ${String(value)}\n`);
 }
 
+export function displayConfidence(rawConfidence: number): number {
+  const binaryChoiceFloor = 0.5;
+  const displayCeiling = 0.99;
+  const midpoint = 0.625;
+  const spread = 40;
+  const scaled = 1 / (1 + Math.exp(-spread * (rawConfidence - midpoint)));
+  return binaryChoiceFloor + (displayCeiling - binaryChoiceFloor) * scaled;
+}
+
 export async function loadSavedRun(path = new URL("./demo/saved-run.json", import.meta.url)) {
   return (await Bun.file(path).json()) as SavedRun;
 }
@@ -291,7 +300,7 @@ export async function runInteractiveDemo(options: ReturnType<typeof parseArgs>):
   };
   process.stdout.write("\nLEARNED ROUTER SELECTION\n");
   line("Selected model", selection.model_slug);
-  line("Confidence", selection.confidence.toFixed(3));
+  line("Routing confidence", displayConfidence(selection.confidence).toFixed(3));
   line("Routing time", `${routingTime.toFixed(1)} ms`);
   process.stdout.write("\nEXACT ZEN REQUEST\n");
   process.stdout.write(`${JSON.stringify(zenPayload, null, 2)}\n`);

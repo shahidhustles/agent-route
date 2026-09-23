@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { MVP_MODEL_PROFILES, PROFILE_VERSION } from "./profiles";
-import { loadSavedRun, parseArgs, routeWithModal } from "./demo";
+import { displayConfidence, loadSavedRun, parseArgs, routeWithModal } from "./demo";
 
 describe("saved review demo", () => {
   test("uses the current profile version and both measured candidates", async () => {
@@ -66,5 +66,14 @@ describe("saved review demo", () => {
       if (originalSecret === undefined) delete process.env.MODAL_PROXY_TOKEN_SECRET;
       else process.env.MODAL_PROXY_TOKEN_SECRET = originalSecret;
     }
+  });
+
+  test("spreads close router scores for the interactive display", () => {
+    const displayed = [0.6, 0.625, 0.65].map(displayConfidence);
+    expect(displayed[0]).toBeCloseTo(0.632, 3);
+    expect(displayed[1]).toBeCloseTo(0.745, 3);
+    expect(displayed[2]).toBeCloseTo(0.858, 3);
+    expect(displayConfidence(0)).toBeGreaterThanOrEqual(0.5);
+    expect(displayConfidence(1)).toBeLessThanOrEqual(0.99);
   });
 });
