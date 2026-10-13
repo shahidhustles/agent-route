@@ -109,6 +109,49 @@
   margin: 0;
 }
 
+.agent-msg-reasoning {
+  color: #9a9a94;
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.agent-shimmer {
+  width: fit-content;
+  margin: 4px 0;
+  color: rgba(55, 65, 58, 0.38);
+  font-size: 13px;
+  font-weight: 520;
+  background: linear-gradient(
+    100deg,
+    rgba(55, 65, 58, 0.32) 20%,
+    rgba(55, 65, 58, 0.82) 45%,
+    rgba(55, 65, 58, 0.32) 70%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: agent-shimmer 1.5s linear infinite;
+}
+
+@keyframes agent-shimmer {
+  to {
+    background-position: -220% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-shimmer {
+    animation: none;
+    -webkit-text-fill-color: currentcolor;
+    background: none;
+    color: var(--muted);
+  }
+}
+
 .agent-composer {
   display: flex;
   align-items: flex-end;

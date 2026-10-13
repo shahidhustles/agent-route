@@ -111,13 +111,29 @@ function AgentWorkspace() {
                 </span>
                 <div className="agent-msg-body">
                   {message.parts
-                    .filter((part) => part.type === "text")
-                    .map((part, index) => (
-                      <p key={index}>{part.text}</p>
-                    ))}
+                    .filter(
+                      (part) =>
+                        part.type === "text" || part.type === "reasoning",
+                    )
+                    .map((part, index) =>
+                      part.type === "reasoning" ? (
+                        <p className="agent-msg-reasoning" key={index}>
+                          {part.text}
+                        </p>
+                      ) : (
+                        <p key={index}>{part.text}</p>
+                      ),
+                    )}
                 </div>
               </article>
             ))}
+            {busy ? (
+              <div className="agent-shimmer" role="status">
+                {routing?.status === "selected"
+                  ? `${routing.model} is writing the snippet...`
+                  : "Routing the task to the best model..."}
+              </div>
+            ) : null}
             {error ? <p className="agent-error">{error.message}</p> : null}
           </div>
           <form
