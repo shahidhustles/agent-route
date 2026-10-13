@@ -2,6 +2,7 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  stepCountIs,
   streamText,
   toUIMessageStream,
   tool,
@@ -32,7 +33,7 @@ const SYSTEM_PROMPT = `You are a Python code generator that creates self-contain
 9. Don't access files or network resources
 10. Don't use infinite loops
 
-When the user asks for code or changes, call updateCodeDocument with the full Python source as a string. Decide quickly, keep reasoning short, and call the tool as soon as the snippet is ready. Keep chat replies concise; the artifact panel shows the full code.`;
+When the user asks for code or changes, call updateCodeDocument with the full Python source as a string. Decide quickly, keep reasoning short, and call the tool as soon as the snippet is ready. After the tool result, reply with one short sentence describing what the snippet does. Keep chat replies concise; the artifact panel shows the full code.`;
 
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 5 * 60 * 1000;
@@ -144,6 +145,7 @@ export async function POST(request: Request) {
         system: SYSTEM_PROMPT,
         messages: await convertToModelMessages(messages),
         maxOutputTokens: 4096,
+        stopWhen: stepCountIs(3),
         toolChoice: "auto",
         tools: { updateCodeDocument },
       });
