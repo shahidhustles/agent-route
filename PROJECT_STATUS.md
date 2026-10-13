@@ -8,11 +8,12 @@
 - `training/` contains family-isolated data generation, Qwen3-0.6B LoRA training, inference, serving, evaluation, tests, and the Colab notebook.
 - `evaluation/` contains the 70-item workload, offline cache importer, reports, tests, and frozen artifact manifest.
 - `demo/` contains the no-cost saved playback and review instructions.
+- `app/agent/` hosts the single-purpose code artifact agent. Each prompt routes through the Modal router, and the chosen model streams Python from Command Code into a browser editor with Pyodide execution.
 - `training/modal_app.py` deploys the fine-tuned Qwen3-0.6B LoRA router on a protected Modal T4 endpoint. `bun run demo:interactive` sends arbitrary pasted tasks to it.
 
 ## Deliberately excluded
 
-- The main agent implementation and model-picker UI. They consume this package but are not needed to develop or evaluate the router.
+- The end-sem heterogeneous-agent system and the model-picker UI beyond the code artifact demo. They consume this package but are not needed to develop or evaluate the router.
 - Monorepo configuration, root lockfile, unrelated packages, and deployment settings.
 - Trained checkpoints, generated datasets, virtual environments, and local demo output. The scripts reproduce these or install a separately transferred artifact.
 

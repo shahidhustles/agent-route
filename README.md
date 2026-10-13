@@ -54,6 +54,19 @@ It presents both measured profiles, two opposite model selections, saved model r
 
 After deploying `training/modal_app.py`, `bun run demo:interactive` starts the browser chat at `http://localhost:3000`. Each prompt goes to the fine-tuned Qwen router first. The selected model and confidence appear before the answer streams. The original terminal flow remains available through `bun run demo:cli`.
 
+## Code artifact agent
+
+`/agent` hosts the single-purpose code artifact agent. Each prompt goes to the Modal router, and the selected model streams Python through Command Code into a browser editor. Run executes the snippet with Pyodide without leaving the page.
+
+It needs the Modal router variables plus `CMD_API_KEY` in `.env.modal`:
+
+```sh
+CMD_API_KEY=your-key
+bun run demo:interactive
+```
+
+Open `http://localhost:3000/agent`, submit a prompt, and the routing chip resolves into a model and confidence before code streams. Versions stay in the tab; nothing is persisted.
+
 ## Router service
 
 After installing the Python dependencies and obtaining a merged checkpoint:

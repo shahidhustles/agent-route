@@ -64,6 +64,9 @@ export function RouterChat() {
               <span className="brand-caption">Task-aware selection</span>
             </span>
           </ThreadListPrimitive.New>
+          <a className="agent-link" href="/agent">
+            Code artifact agent
+          </a>
           <span className="live-badge">
             <span />
             Router online

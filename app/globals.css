@@ -115,6 +115,20 @@ button {
   background: #38a169;
   box-shadow: 0 0 0 3px #e4f3e9;
 }
+.agent-link {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #fff;
+  color: #365544;
+  text-decoration: none;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.agent-link:hover {
+  background: #f5faf7;
+  border-color: #dce5df;
+}
 
 .thread-root {
   min-height: 0;

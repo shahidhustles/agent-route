@@ -1,0 +1,124 @@
+"use client";
+
+import { python } from "@codemirror/lang-python";
+import { EditorState, Transaction } from "@codemirror/state";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { EditorView } from "@codemirror/view";
+import { basicSetup } from "codemirror";
+import { memo, useEffect, useRef } from "react";
+
+interface EditorProps {
+  content: string;
+  onSaveContent: (updatedContent: string, debounce: boolean) => void;
+  status: "streaming" | "idle";
+  isCurrentVersion: boolean;
+  currentVersionIndex: number;
+}
+
+const editorHeightTheme = EditorView.theme({
+  "&": { height: "100%" },
+  ".cm-scroller": { overflow: "auto" },
+});
+
+function PureCodeEditor({ content, onSaveContent, status }: EditorProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<EditorView | null>(null);
+
+  useEffect(() => {
+    if (containerRef.current && !editorRef.current) {
+      const startState = EditorState.create({
+        doc: content,
+        extensions: [basicSetup, python(), oneDark, editorHeightTheme],
+      });
+
+      editorRef.current = new EditorView({
+        parent: containerRef.current,
+        state: startState,
+      });
+    }
+
+    return () => {
+      if (editorRef.current) {
+        editorRef.current.destroy();
+        editorRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (editorRef.current) {
+      const updateListener = EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          const transaction = update.transactions.find(
+            (tr) => !tr.annotation(Transaction.remote)
+          );
+
+          if (transaction) {
+            const newContent = update.state.doc.toString();
+            onSaveContent(newContent, true);
+          }
+        }
+      });
+
+      const currentSelection = editorRef.current.state.selection;
+
+      const newState = EditorState.create({
+        doc: editorRef.current.state.doc,
+        extensions: [
+          basicSetup,
+          python(),
+          oneDark,
+          editorHeightTheme,
+          updateListener,
+        ],
+        selection: currentSelection,
+      });
+
+      editorRef.current.setState(newState);
+    }
+  }, [onSaveContent]);
+
+  useEffect(() => {
+    if (editorRef.current && content !== undefined) {
+      const currentContent = editorRef.current.state.doc.toString();
+
+      if (status === "streaming" || currentContent !== content) {
+        const transaction = editorRef.current.state.update({
+          annotations: [Transaction.remote.of(true)],
+          changes: {
+            from: 0,
+            insert: content,
+            to: currentContent.length,
+          },
+        });
+
+        editorRef.current.dispatch(transaction);
+      }
+    }
+  }, [content, status]);
+
+  return (
+    <div className="artifact-editor-frame">
+      <div className="artifact-editor-shell" ref={containerRef} />
+    </div>
+  );
+}
+
+function areEqual(prevProps: EditorProps, nextProps: EditorProps) {
+  if (prevProps.currentVersionIndex !== nextProps.currentVersionIndex) {
+    return false;
+  }
+  if (prevProps.isCurrentVersion !== nextProps.isCurrentVersion) {
+    return false;
+  }
+  if (prevProps.status === "streaming" && nextProps.status === "streaming") {
+    return false;
+  }
+  if (prevProps.content !== nextProps.content) {
+    return false;
+  }
+
+  return true;
+}
+
+export const CodeEditor = memo(PureCodeEditor, areEqual);
