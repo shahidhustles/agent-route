@@ -29,7 +29,7 @@ canonical label distribution. Generated data stays out of Git.
 ## Colab training
 
 Use the Colab MCP for GPU work. Keep credentials in Colab secrets. Training
-does not need the Zen API key, but later benchmark or execution work may.
+does not need the Command Code API key, but later benchmark or execution work may.
 
 Start with a smoke run:
 
@@ -83,7 +83,7 @@ default when --split is omitted.
 Evaluation reports policy agreement, output validity, invalid slugs, hard
 constraint violations, candidate-order agreement, per-category results, and
 latency. Policy agreement measures imitation of the deterministic teacher. It
-does not measure whether a Zen model completes the selected task.
+does not measure whether a Command Code model completes the selected task.
 
 ## Local interface
 

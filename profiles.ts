@@ -10,6 +10,21 @@ export const MODEL_SLUGS = {
 
 export type ModelSlug = (typeof MODEL_SLUGS)[keyof typeof MODEL_SLUGS];
 
+export const COMMAND_CODE_BASE_URL = "https://api.commandcode.ai/provider/v1";
+
+export const PROVIDER_MODEL_IDS: Readonly<Partial<Record<ModelSlug, string>>> = {
+  [MODEL_SLUGS.glmFlash]: "z-ai/glm-5.3-flash",
+  [MODEL_SLUGS.deepSeekFlash]: "deepseek/deepseek-v4.1-flash",
+};
+
+export function providerModelId(modelSlug: ModelSlug): string {
+  const providerId = PROVIDER_MODEL_IDS[modelSlug];
+  if (providerId === undefined) {
+    throw new Error(`No Command Code provider ID for model: ${modelSlug}`);
+  }
+  return providerId;
+}
+
 export type CapabilityScores = Readonly<{
   reasoning: number;
   coding: number;

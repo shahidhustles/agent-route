@@ -11,9 +11,9 @@ python evaluation/run.py \
 python evaluation/report.py
 ```
 
-The default is offline-only. The first command imports the already-saved ticket 01 outcomes and stores them by benchmark version, task ID, model ID, and decoding settings under `evaluation/cache/`. Later strategies and reruns reuse those responses. A cache miss stops the run without contacting Zen. Paid calls require `--allow-paid-calls` and an explicit `--max-cost-usd` cap.
+The default is offline-only. The first command imports the already-saved ticket 01 outcomes and stores them by benchmark version, task ID, model ID, and decoding settings under `evaluation/cache/`. Later strategies and reruns reuse those responses. A cache miss stops the run without contacting Command Code. Paid calls require `--allow-paid-calls` and an explicit `--max-cost-usd` cap.
 
-The report separates policy agreement, downstream success, invalid output, hard-constraint violations, routing latency, Zen latency, token rate, calculated request cost, routing errors, and execution errors. It also writes per-category results and evidence paths.
+The report separates policy agreement, downstream success, invalid output, hard-constraint violations, routing latency, provider latency, token rate, calculated request cost, routing errors, and execution errors. It also writes per-category results and evidence paths.
 
 The repository does not contain a complete merged checkpoint, so `evaluation-summary.json` marks the learned-policy comparison as pending instead of presenting partial results as a finished experiment.
 

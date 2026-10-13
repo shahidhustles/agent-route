@@ -169,9 +169,9 @@
     "provider": "openai-compatible",
     "location": "hosted",
     "auto_eligible": false,
-    "base_url": "https://opencode.ai/zen/go/v1",
-    "served_model": "glm-5.3-flash",
-    "api_key_env": "ZEN_API_KEY"
+    "base_url": "https://api.commandcode.ai/provider/v1",
+    "served_model": "z-ai/glm-5.3-flash",
+    "api_key_env": "CMD_API_KEY"
   },
   {
     "profile": {
@@ -203,8 +203,8 @@
     "provider": "openai-compatible",
     "location": "hosted",
     "auto_eligible": false,
-    "base_url": "https://opencode.ai/zen/go/v1",
-    "served_model": "deepseek-v4.1-flash",
-    "api_key_env": "ZEN_API_KEY"
+    "base_url": "https://api.commandcode.ai/provider/v1",
+    "served_model": "deepseek/deepseek-v4.1-flash",
+    "api_key_env": "CMD_API_KEY"
   }
 ]

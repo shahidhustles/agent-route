@@ -216,7 +216,7 @@ write_env MODAL_PROXY_TOKEN_ID "$MODAL_PROXY_TOKEN_ID"
 write_env MODAL_PROXY_TOKEN_SECRET "$MODAL_PROXY_TOKEN_SECRET"
 
 stage "Route a smoke task"
-say "This calls only the deployed Qwen router. It prints the Zen request but does not execute it."
+  say "This calls only the deployed Qwen router. It prints the Command Code request but does not execute it."
 set -a
 source "$ENV_FILE"
 set +a

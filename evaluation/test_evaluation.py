@@ -26,7 +26,7 @@ TASK = {'task_id': 'task-1', 'category': 'coding', 'messages': [{'role':'user','
 
 class FakeClient:
     def __init__(self): self.calls = 0
-    def chat(self, model, case, session):
+    def chat(self, model, case):
         self.calls += 1
         return {'content':'ok','tool_calls':[],'latency_ms':100,
                 'usage':{'prompt_tokens':100,'completion_tokens':10}}
@@ -54,7 +54,7 @@ class EvaluationTests(unittest.TestCase):
         self.assertEqual(client.calls, 1)
         self.assertEqual((cache.hits, cache.misses), (1, 1))
 
-    def test_offline_cache_miss_never_calls_zen(self):
+    def test_offline_cache_miss_never_calls_command_code(self):
         with tempfile.TemporaryDirectory() as directory:
             cache = ExecutionCache(Path(directory))
             with self.assertRaisesRegex(RuntimeError, 'Offline cache miss'):

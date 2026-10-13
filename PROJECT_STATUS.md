@@ -4,7 +4,7 @@
 
 - `runtime.ts` contains the learned-router client, schema validation, hard tool and context filters, deterministic fallback, load probing, and session locking.
 - `router.ts` exposes random, round-robin, static-rule, heuristic, learned, and oracle strategies through one result contract.
-- `profiles.ts` and `training-profiles.json` contain benchmark version `benchmark-v1-20260919T110437Z-272c` for `glm-5.3-flash` and `deepseek-v4.1-flash`.
+- `profiles.ts` and `training-profiles.json` contain benchmark version `benchmark-v1-20260919T110437Z-272c` for `glm-5.3-flash` and `deepseek-v4.1-flash`, served through Command Code.
 - `training/` contains family-isolated data generation, Qwen3-0.6B LoRA training, inference, serving, evaluation, tests, and the Colab notebook.
 - `evaluation/` contains the 70-item workload, offline cache importer, reports, tests, and frozen artifact manifest.
 - `demo/` contains the no-cost saved playback and review instructions.
@@ -18,7 +18,7 @@
 
 ## Evidence and limits
 
-- The saved Zen benchmark has 35 tasks per model across seven categories.
+- The saved benchmark has 35 tasks per model across seven categories. It ran against OpenCode Zen; profiles need re-measuring against Command Code before the next benchmark or evaluation run.
 - The refined router recorded 82.875% validation policy agreement. This is not downstream success.
 - The offline comparison reuses 70 model outcomes. It reports five strategies without spending new credits.
 - The learned router is deployed from the pinned base revision plus the trained adapter. The full learned downstream comparison remains pending.

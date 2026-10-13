@@ -12,7 +12,7 @@ The end-sem project will extend this foundation from model routing to routing be
 
 ## 1. Choose the candidate models
 
-- [x] Select two candidates available through Zen.
+- [x] Select two candidates available through Command Code.
 - [x] Assign every model a stable `model_slug`.
 - [ ] Record the exact model and checkpoint version.
 - [ ] Record the quantization format and level.
@@ -206,7 +206,7 @@ The live demonstration should show this sequence:
 - [x] Hard constraints remove incompatible models.
 - [x] The learned Modal router selects a model in interactive mode. Saved playback uses the profile heuristic.
 - [x] The terminal shows the selected model, confidence, evidence, and routing time.
-- [x] A saved Zen execution supplies the model response.
+- [x] A saved Command Code execution supplies the model response.
 - [x] The output and execution metrics are displayed.
 - [x] The terminal report compares the completed strategies and marks learned pending.
 - [x] A saved run is available if live inference fails.

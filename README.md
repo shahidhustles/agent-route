@@ -1,8 +1,8 @@
 # EDI Model Router
 
-This repository contains the mid-sem model router, its Zen benchmark, Qwen3-0.6B training pipeline, routing-strategy comparison, and offline review demo.
+This repository contains the mid-sem model router, its Command Code benchmark, Qwen3-0.6B training pipeline, routing-strategy comparison, and offline review demo.
 
-The measured candidates are `glm-5.3-flash` and `deepseek-v4.1-flash`. The runtime filters tool, context, and VRAM constraints before selection. The mid-sem work routes between models. Heterogeneous agent routing remains end-sem work.
+The measured candidates are `glm-5.3-flash` and `deepseek-v4.1-flash`, served through Command Code. The runtime filters tool, context, and VRAM constraints before selection. The mid-sem work routes between models. Heterogeneous agent routing remains end-sem work.
 
 Start with [PROJECT_STATUS.md](PROJECT_STATUS.md) for the honest completion state. The review flow is in [demo/README.md](demo/README.md).
 
@@ -12,12 +12,12 @@ Start with [PROJECT_STATUS.md](PROJECT_STATUS.md) for the honest completion stat
 edi-model-router/
   runtime.ts                 learned-router client and session selection
   router.ts                  heuristic baseline
-  profiles.ts                measured Zen profiles
+  profiles.ts                measured Command Code profiles
   registry.ts                endpoint and profile registry schema
   registry.example.json      sample candidate registry
   training-profiles.json     training-time profile snapshot
   training/                  data, LoRA training, serving, and evaluation
-  benchmarking/              versioned Zen benchmark and saved evidence
+  benchmarking/              versioned Command Code benchmark and saved evidence
   evaluation/                frozen workload, policies, cache, and reports
   demo/                      saved review playback and instructions
   evaluation.md              current and prior evaluation limits
@@ -44,7 +44,7 @@ See [training/README.md](training/README.md) for environment setup, dataset gene
 
 ## Review demo
 
-The default demo is offline and cannot spend Zen credits:
+The default demo is offline and cannot spend Command Code credits:
 
 ```sh
 bun run demo

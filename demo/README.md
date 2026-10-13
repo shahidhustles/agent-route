@@ -1,6 +1,6 @@
 # Mid-sem review demo
 
-The demo is an offline playback of ticket 01 evidence. It makes no Zen request and spends no credits.
+The demo is an offline playback of ticket 01 evidence. It makes no Command Code request and spends no credits.
 
 ## Clean start
 
@@ -11,7 +11,7 @@ bun install --frozen-lockfile
 bun run demo
 ```
 
-The command prints both measured profiles, runs the hard filters and router locally, then displays the saved Zen response, deterministic score, token use, latency, throughput, calculated request cost, and strategy comparison.
+The command prints both measured profiles, runs the hard filters and router locally, then displays the saved model response, deterministic score, token use, latency, throughput, calculated request cost, and strategy comparison.
 
 Run one prepared case:
 
@@ -36,10 +36,10 @@ No API key is needed.
 
 ## Optional live mode
 
-Do not use this during ordinary review playback. It makes one paid Zen call for the selected example. All four guards are required:
+Do not use this during ordinary review playback. It makes one paid Command Code call for the selected example. All four guards are required:
 
 ```sh
-ZEN_API_KEY=... \
+CMD_API_KEY=... \
 DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND \
 bun run demo -- --example fast --live --allow-paid-call --max-cost-usd 0.001
 ```
@@ -65,7 +65,7 @@ bun run demo:interactive
 
 Open `http://localhost:3000`, submit a task, and confirm the routing message changes into a model and confidence chip before the response begins.
 
-The setup wizard stores the Modal values in `.env.modal`, and the package command loads that ignored file automatically. Use `bun run demo:cli` for the original paste-in terminal flow. That command does not call Zen unless you also pass `--execute-zen --allow-paid-call --max-cost-usd AMOUNT` and set both `ZEN_API_KEY` and `DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND`.
+The setup wizard stores the Modal values in `.env.modal`, and the package command loads that ignored file automatically. Use `bun run demo:cli` for the original paste-in terminal flow. That command does not call Command Code unless you also pass `--execute-provider --allow-paid-call --max-cost-usd AMOUNT` and set both `CMD_API_KEY` and `DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND`.
 
 ## Review sequence
 

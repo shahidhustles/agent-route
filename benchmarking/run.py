@@ -1,4 +1,4 @@
-"""Benchmark Zen candidate models on a versioned suite.
+"""Benchmark Command Code candidate models on a versioned suite.
 
 Each run writes into an immutable directory under benchmarking/results/.
 A rerun never overwrites an earlier run; --resume <dir> fills only the
@@ -15,7 +15,7 @@ import urllib.error
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from adapters.zen import ZenClient, redact_headers
+from adapters.cmd import CommandCodeClient, provider_model_id
 from scorers import score_case
 
 SUITE_VERSION = 'v1'
@@ -51,11 +51,11 @@ def request_for(model, case, session_id):
     return {'payload': payload, 'session_id': session_id}
 
 
-def call_case(client, model, case, session_id):
+def call_case(client, model, case):
     last_error = None
     for _ in range(ATTEMPTS):
         try:
-            return client.chat(model, case, session_id)
+            return client.chat(model, case)
         except (urllib.error.URLError, OSError, KeyError, ValueError) as error:
             last_error = f'{type(error).__name__}: {error}'
     return {'error': last_error, 'content': None, 'tool_calls': [], 'usage': {}}
@@ -71,8 +71,8 @@ def run_model(client, model, cases, run_dir, log=lambda *_: None):
         if case_path.exists():
             skipped += 1
             continue
-        request = request_for(model, case, session_id)
-        result = call_case(client, model, case, session_id)
+        request = request_for(provider_model_id(model), case, session_id)
+        result = call_case(client, provider_model_id(model), case)
         scored = {'passed': False, 'detail': 'request failed'}
         if 'error' not in result:
             scored = score_case(case, result)
@@ -94,13 +94,13 @@ def main(argv=None):
                         help="flash, deepseek, or both")
     parser.add_argument('--suite', default=SUITE_VERSION)
     parser.add_argument('--resume', help='existing run directory to complete')
-    parser.add_argument('--api-key-env', default='ZEN_API_KEY')
+    parser.add_argument('--api-key-env', default='CMD_API_KEY')
     args = parser.parse_args(argv)
 
     models = [MODELS['flash'], MODELS['deepseek']] if args.models == 'both' else [MODELS[args.models]]
     api_key = os.environ.get(args.api_key_env)
     if not api_key:
-        raise SystemExit(f'Set {args.api_key_env} to the Zen API key')
+        raise SystemExit(f'Set {args.api_key_env} to the Command Code API key')
 
     run_dir = pathlib.Path(args.resume).resolve() if args.resume else create_run_dir(args.suite)
     if args.resume and not (run_dir / 'meta.json').exists():
@@ -118,7 +118,7 @@ def main(argv=None):
         }, indent=2) + '\n')
 
     cases = load_suite(args.suite)
-    client = ZenClient(api_key)
+    client = CommandCodeClient(api_key)
     for model in models:
         def log(name, case_id, scored, _model=model):
             print(f'{_model} {case_id}: {"pass" if scored["passed"] else "FAIL"} {scored["detail"]}')

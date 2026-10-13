@@ -1,8 +1,10 @@
 import { eligibleRequest, resultSchema, type RoutingRequest, type RoutingResult } from "./runtime";
 import {
+  COMMAND_CODE_BASE_URL,
   MODEL_SLUGS,
   MVP_MODEL_PROFILES,
   PROFILE_VERSION,
+  providerModelId,
   type ModelProfile,
   type ModelSlug,
 } from "./profiles";
@@ -60,7 +62,7 @@ export function parseArgs(args: readonly string[]) {
     availableVramGb: Number(valueAfter("--available-vram-gb") ?? 0) || undefined,
     requiresTools: args.includes("--requires-tools"),
     interactive: args.includes("--interactive"),
-    executeZen: args.includes("--execute-zen"),
+    executeProvider: args.includes("--execute-provider"),
     live: args.includes("--live"),
     allowPaidCall: args.includes("--allow-paid-call"),
     help: args.includes("--help"),
@@ -171,7 +173,7 @@ async function executeLive(
   maxCostUsd: number,
   expected?: string,
 ): Promise<Execution> {
-  if (!process.env.ZEN_API_KEY) throw new Error("Live mode requires ZEN_API_KEY");
+  if (!process.env.CMD_API_KEY) throw new Error("Live mode requires CMD_API_KEY");
   const price =
     modelSlug === MODEL_SLUGS.glmFlash ? { input: 0.15, output: 0.5 } : { input: 0.3, output: 1.2 };
   const inputUpperBound = new TextEncoder().encode(task).length;
@@ -179,22 +181,21 @@ async function executeLive(
   if (projectedCost > maxCostUsd)
     throw new Error(`Projected cost $${projectedCost.toFixed(7)} exceeds the supplied cap`);
   const started = performance.now();
-  const response = await fetch("https://opencode.ai/zen/go/v1/chat/completions", {
+  const response = await fetch(`${COMMAND_CODE_BASE_URL}/chat/completions`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${process.env.ZEN_API_KEY}`,
+      Authorization: `Bearer ${process.env.CMD_API_KEY}`,
       "Content-Type": "application/json",
       "User-Agent": "agent-route-demo/1.0",
-      "x-opencode-session": `mid-sem-demo-${crypto.randomUUID()}`,
     },
     body: JSON.stringify({
-      model: modelSlug,
+      model: providerModelId(modelSlug),
       messages: [{ role: "user", content: task }],
       temperature: 0,
       max_tokens: maxTokens,
     }),
   });
-  if (!response.ok) throw new Error(`Zen returned HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Command Code returned HTTP ${response.status}`);
   const body = (await response.json()) as {
     choices: Array<{ message?: { content?: string } }>;
     usage?: { prompt_tokens?: number; completion_tokens?: number };
@@ -211,7 +212,7 @@ async function executeLive(
     completion_tokens: completionTokens,
     token_rate: latency ? completionTokens / (latency / 1000) : 0,
     request_cost_usd: (promptTokens * price.input + completionTokens * price.output) / 1_000_000,
-    evidence: "live Zen response, not saved",
+    evidence: "live Command Code response, not saved",
   };
 }
 
@@ -251,7 +252,7 @@ export async function runSavedDemo(options: ReturnType<typeof parseArgs>): Promi
 
     process.stdout.write(`\nTASK: ${example.label}\n`);
     line("Input", eligible.user_task);
-    line("Mode", options.live ? "live Zen execution" : "saved evidence, no API call");
+    line("Mode", options.live ? "live Command Code execution" : "saved evidence, no API call");
     line("Eligible candidates", eligible.candidate_models.join(", "));
     line(
       "Filtered candidates",
@@ -267,8 +268,8 @@ export async function runSavedDemo(options: ReturnType<typeof parseArgs>): Promi
       execution.passed === null ? "not scored" : execution.passed ? "pass" : "fail",
     );
     line("Token use", `${execution.prompt_tokens} input, ${execution.completion_tokens} output`);
-    line("Zen latency", `${execution.latency_ms} ms`);
-    line("Zen token rate", `${execution.token_rate.toFixed(3)} tok/s`);
+    line("Command Code latency", `${execution.latency_ms} ms`);
+    line("Command Code rate", `${execution.token_rate.toFixed(3)} tok/s`);
     line("Request cost", `$${execution.request_cost_usd.toFixed(7)}`);
     line("Evidence", execution.evidence);
   }
@@ -292,8 +293,8 @@ export async function runInteractiveDemo(options: ReturnType<typeof parseArgs>):
   const routingTime = performance.now() - started;
   if (!request.candidate_models.includes(selection.model_slug))
     throw new Error("Modal router selected an ineligible model");
-  const zenPayload = {
-    model: selection.model_slug,
+  const providerPayload = {
+    model: providerModelId(selection.model_slug as ModelSlug),
     messages: [{ role: "user", content: task }],
     temperature: 0,
     max_tokens: 256,
@@ -302,18 +303,18 @@ export async function runInteractiveDemo(options: ReturnType<typeof parseArgs>):
   line("Selected model", selection.model_slug);
   line("Routing confidence", displayConfidence(selection.confidence).toFixed(3));
   line("Routing time", `${routingTime.toFixed(1)} ms`);
-  process.stdout.write("\nEXACT ZEN REQUEST\n");
-  process.stdout.write(`${JSON.stringify(zenPayload, null, 2)}\n`);
-  if (!options.executeZen) {
-    line("Zen execution", "skipped; add --execute-zen with paid-call guards");
+  process.stdout.write("\nEXACT COMMAND CODE REQUEST\n");
+  process.stdout.write(`${JSON.stringify(providerPayload, null, 2)}\n`);
+  if (!options.executeProvider) {
+    line("Provider execution", "skipped; add --execute-provider with paid-call guards");
     return;
   }
   if (!options.allowPaidCall || process.env.DEMO_ALLOW_PAID_CALLS !== "I_UNDERSTAND")
     throw new Error(
-      "Zen execution requires --allow-paid-call and DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND",
+      "Provider execution requires --allow-paid-call and DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND",
     );
   if (!Number.isFinite(options.maxCostUsd) || options.maxCostUsd <= 0)
-    throw new Error("Zen execution requires a positive --max-cost-usd cap");
+    throw new Error("Provider execution requires a positive --max-cost-usd cap");
   const execution = await executeLive(
     task,
     256,
@@ -323,8 +324,8 @@ export async function runInteractiveDemo(options: ReturnType<typeof parseArgs>):
   line("Response", execution.response);
   line("Task score", "not scored");
   line("Token use", `${execution.prompt_tokens} input, ${execution.completion_tokens} output`);
-  line("Zen latency", `${execution.latency_ms} ms`);
-  line("Zen token rate", `${execution.token_rate.toFixed(3)} tok/s`);
+  line("Command Code latency", `${execution.latency_ms} ms`);
+  line("Command Code rate", `${execution.token_rate.toFixed(3)} tok/s`);
   line("Request cost", `$${execution.request_cost_usd.toFixed(7)}`);
 }
 
@@ -336,7 +337,7 @@ function usage(): void {
   bun run demo -- --task "<exact>"    Enter one prepared task verbatim
   bun run demo -- --interactive        Paste any task and call the learned Modal router
 
-Saved playback is the default and never contacts Zen. Live mode requires explicit paid-call guards.
+Saved playback is the default and never contacts Command Code. Live mode requires explicit paid-call guards.
 `);
 }
 

@@ -60,7 +60,7 @@ The engine is implemented under `benchmarking/`:
 
 ```text
 benchmarking/
-  adapters/zen.py     OpenAI-compatible client for https://opencode.ai/zen/v1
+  adapters/cmd.py     OpenAI-compatible client for the Command Code provider API
   suites/v1.jsonl     35 versioned cases (5 per capability category)
   scorers/            deterministic scorers; category pass rates come only from these
   run.py              benchmark entry point
@@ -68,10 +68,10 @@ benchmarking/
   results/            immutable run directories (never overwritten)
 ```
 
-Run one model or both (set `ZEN_API_KEY`; retries of one case reuse its `x-opencode-session` value, separate cases get separate values):
+Run one model or both (set `CMD_API_KEY`; internal slugs map to Command Code's provider-prefixed IDs at the wire):
 
 ```bash
-export ZEN_API_KEY=...          # Colab: read from a Colab secret instead
+export CMD_API_KEY=...          # Colab: read from a Colab secret instead
 python benchmarking/run.py --models both --suite v1
 python benchmarking/run.py --models ultra --suite v1 --resume benchmarking/results/<run>
 python benchmarking/build_profile.py benchmarking/results/<run>

@@ -3,7 +3,7 @@ import pathlib
 import tempfile
 import unittest
 
-from adapters.zen import redact_headers
+from adapters.cmd import redact_headers
 from build_profile import build_profile
 from run import create_run_dir, run_model
 from scorers import score_case
@@ -103,7 +103,7 @@ class RunTests(unittest.TestCase):
             calls = []
 
             class FakeClient:
-                def chat(self, model, case, session_id):
+                def chat(self, model, case):
                     calls.append((model, case['id']))
                     return {'content': 'fresh', 'tool_calls': [], 'usage': {}, 'latency_ms': 5}
 

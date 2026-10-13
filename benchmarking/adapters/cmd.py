@@ -1,12 +1,23 @@
-"""OpenAI-compatible client for the free OpenCode Zen candidate models."""
+"""OpenAI-compatible client for the Command Code hosted candidate models."""
 import json
 import time
 import urllib.error
 import urllib.request
 
-BASE_URL = 'https://opencode.ai/zen/go/v1'
+BASE_URL = 'https://api.commandcode.ai/provider/v1'
 USER_AGENT = 'agent-route-benchmark/1.0'
 RATE_LIMIT_BACKOFF = (5, 15, 45)
+
+# Command Code routes provider-prefixed model IDs; benchmarks and evidence
+# keep the bare internal slugs and translate only at the wire.
+PROVIDER_MODEL_IDS = {
+    'glm-5.3-flash': 'z-ai/glm-5.3-flash',
+    'deepseek-v4.1-flash': 'deepseek/deepseek-v4.1-flash',
+}
+
+
+def provider_model_id(model):
+    return PROVIDER_MODEL_IDS.get(model, model)
 
 
 def redact_headers(headers):
@@ -14,11 +25,11 @@ def redact_headers(headers):
             for key, value in headers.items()}
 
 
-class ZenClient:
+class CommandCodeClient:
     def __init__(self, api_key):
         self.api_key = api_key
 
-    def chat(self, model, case, session_id, timeout=120):
+    def chat(self, model, case, timeout=120):
         """Call chat/completions once, waiting out 429 rate limits."""
         payload = {
             'model': model,
@@ -31,7 +42,6 @@ class ZenClient:
         headers = {
             'Content-Type': 'application/json',
             'Authorization': f'Bearer {self.api_key}',
-            'x-opencode-session': session_id,
             'User-Agent': USER_AGENT,
         }
         request = urllib.request.Request(

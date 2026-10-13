@@ -11,7 +11,7 @@ ROOT = HERE.parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(ROOT / 'benchmarking'))
 
-from adapters.zen import ZenClient
+from adapters.cmd import CommandCodeClient, provider_model_id
 from baselines import MODELS, STRATEGIES, route
 from scorers import score_case
 
@@ -110,8 +110,7 @@ class ExecutionCache:
         case = {'messages': task['messages'], 'max_tokens': task['max_tokens']}
         if task.get('tools'):
             case['tools'] = task['tools']
-        session = f'evaluation-{BENCHMARK_VERSION}-{task["task_id"]}-{model}'
-        result = self.client.chat(model, case, session)
+        result = self.client.chat(provider_model_id(model), case)
         score = score_case(task, result)
         usage = result.get('usage') or {}
         output_tokens = usage.get('completion_tokens', 0) or 0
@@ -220,9 +219,9 @@ def main(argv=None):
         parser.error('The frozen workload must contain 50 to 100 tasks')
     if args.allow_paid_calls and args.max_cost_usd <= 0:
         parser.error('--allow-paid-calls requires a positive --max-cost-usd')
-    if args.allow_paid_calls and not os.environ.get('ZEN_API_KEY'):
-        parser.error('--allow-paid-calls requires ZEN_API_KEY')
-    client = ZenClient(os.environ['ZEN_API_KEY']) if args.allow_paid_calls else None
+    if args.allow_paid_calls and not os.environ.get('CMD_API_KEY'):
+        parser.error('--allow-paid-calls requires CMD_API_KEY')
+    client = CommandCodeClient(os.environ['CMD_API_KEY']) if args.allow_paid_calls else None
     cache = ExecutionCache(args.cache, client, args.max_cost_usd)
     imported = cache.import_benchmark_run(args.benchmark_run, workload) if args.benchmark_run else 0
     rows = evaluate(workload, load_profiles(), cache, args.checkpoint, args.strategies)

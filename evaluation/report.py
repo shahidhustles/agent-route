@@ -47,7 +47,7 @@ def markdown(report):
     lines = [f'# Routing strategy evaluation', '',
              f'Run kind: `{report["kind"]}`. Benchmark: `{report["benchmark_version"]}`. '
              f'Seed: `{report["seed"]}`. Workload SHA-256: `{report["workload_sha256"]}`.', '',
-             '| Strategy | Agreement | Success | Invalid | Violations | Route ms | Zen ms | tok/s | Cost USD | Errors |',
+             '| Strategy | Agreement | Success | Invalid | Violations | Route ms | Provider ms | tok/s | Cost USD | Errors |',
              '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |']
     for name, item in report['aggregate'].items():
         lines.append(f'| {name} | {item["policy_agreement"]:.1%} | {item["downstream_success"]:.1%} | '
@@ -59,7 +59,7 @@ def markdown(report):
     for category, strategies in report['categories'].items():
         lines.append(f'### {category.replace("_", " ")}')
         lines.append('')
-        lines.append('| Strategy | Success | Agreement | Zen ms | Cost USD |')
+        lines.append('| Strategy | Success | Agreement | Provider ms | Cost USD |')
         lines.append('| --- | ---: | ---: | ---: | ---: |')
         for name, item in strategies.items():
             lines.append(f'| {name} | {item["downstream_success"]:.1%} | {item["policy_agreement"]:.1%} | '

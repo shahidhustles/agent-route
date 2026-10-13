@@ -23,7 +23,7 @@ def load_inputs(profile_path, family_path):
     profiles = json.loads(profile_path.read_text(encoding='utf-8'))
     profiles = [profile for profile in profiles if profile['model_slug'] in MEASURED_MODELS]
     if {profile['model_slug'] for profile in profiles} != MEASURED_MODELS:
-        raise ValueError('Training profiles must contain both measured Zen candidates')
+        raise ValueError('Training profiles must contain both measured Command Code candidates')
     source = json.loads(family_path.read_text(encoding='utf-8'))
     families = []
     for category in source['categories']:
