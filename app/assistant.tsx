@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { parse } from "papaparse";
 import { toast } from "sonner";
+import { AccountFooter } from "@/components/account-footer";
 import { ThreadListItems } from "@/components/assistant-ui/elements/thread-list.aui";
 import { MarkdownText } from "@/components/assistant-ui/elements/markdown-text";
 import {
@@ -211,13 +212,7 @@ function ChatShell({ artifact }: { artifact: ArtifactSelection | null }) {
           <p className="section-label">Chats</p>
           {hasChats ? <ThreadListItems /> : <p className="section-label">No chats yet</p>}
         </div>
-        <div className="sidebar-footer">
-          <span className="user-avatar">S</span>
-          <div>
-            <span>Personal workspace</span>
-            <p>Local session</p>
-          </div>
-        </div>
+        <AccountFooter />
       </aside>
       <main className="chat-main">
         <header className="chat-header">
