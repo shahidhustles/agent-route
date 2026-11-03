@@ -24,6 +24,10 @@ Routing metadata is hidden behind the reply information button. Its dialog conta
 
 All eight artifact types use the existing ArtifactView and block renderers. A reply card opens the preview again. Recorded artifacts are available in a sidebar library with no model calls. Conversations use assistant-ui's local thread list, without Assistant Cloud. This list is session-local.
 
+## Account
+
+Clerk signs users in with Google. Signed-out visitors see a centered card with a Continue with Google button on the white canvas. The sidebar footer shows the signed-in user's avatar, full name and email, truncated to one line each, with a Sign out row under them in the nav-button style. The footer is the same in the phone drawer. Without Clerk keys the page shows a setup message and the API routes answer 503.
+
 ## Accessibility and verification
 
 Every icon button has a name. Dialogs trap focus and close with Escape. Keyboard focus has a visible outline. Reduced motion disables shimmer, animation, and smooth scrolling. At phone widths the page has no horizontal overflow and the artifact has its own scrolling region.

@@ -1,5 +1,6 @@
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
 import { z } from "zod";
+import { rejectAnonymous } from "@/lib/require-user";
 import { routeAnswer } from "@/lib/answer";
 import { AGENTS, PREFERENCES, type RouteResponse, type Run } from "@/lib/api";
 import { sse } from "@/lib/chat-stream";
@@ -62,6 +63,8 @@ async function backend<T>(path: string, body?: unknown): Promise<T> {
   return data;
 }
 export async function POST(request: Request) {
+  const rejected = await rejectAnonymous();
+  if (rejected) return rejected;
   const parsed = input.safeParse(await request.json());
   if (!parsed.success)
     return Response.json({ error: "Invalid chat request or CSV too large." }, { status: 400 });

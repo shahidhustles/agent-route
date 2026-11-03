@@ -1,7 +1,9 @@
+import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
+import { clerkConfigured } from "@/lib/clerk-config";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -15,12 +17,15 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  const shell = (
+    <>
+      <TooltipProvider>{children}</TooltipProvider>
+      <Toaster />
+    </>
+  );
   return (
     <html className={chat.variable} lang="en">
-      <body>
-        <TooltipProvider>{children}</TooltipProvider>
-        <Toaster />
-      </body>
+      <body>{clerkConfigured() ? <ClerkProvider>{shell}</ClerkProvider> : shell}</body>
     </html>
   );
 }

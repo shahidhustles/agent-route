@@ -1,9 +1,12 @@
+import { rejectAnonymous } from "@/lib/require-user";
 import { answer, type Preference } from "@/lib/answer";
 
 export const maxDuration = 300;
 
 /** "Just answer": one routed Command Code call. */
 export async function POST(request: Request) {
+  const rejected = await rejectAnonymous();
+  if (rejected) return rejected;
   const { text, preference } = (await request.json()) as { text?: string; preference?: Preference };
   if (!text?.trim()) return Response.json({ error: "text is required" }, { status: 400 });
 
