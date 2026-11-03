@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Order flow</title>
+<style>body{margin:0;font-family:Arial,sans-serif;background:#0f1b2d;color:#e8eef6}svg{display:block;width:100%;height:auto}
+.n{fill:#17304f;stroke:#4fb3a9;stroke-width:1.5}.d{fill:#3a2a12;stroke:#f2a93b;stroke-width:1.5}.t{fill:#e8eef6;font-size:15px;text-anchor:middle}.l{fill:#9db2c8;font-size:12px}.e{stroke:#7f95ad;stroke-width:1.6;fill:none}h1{font:600 20px Arial;margin:18px 24px 0}</style></head>
+<body><h1>Checkout, from cart to shipment</h1>
+<svg viewBox="0 0 900 360" role="img" aria-label="Checkout flow">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="#7f95ad"/></marker></defs>
+<rect class="n" x="30" y="140" width="120" height="56" rx="10"/><text class="t" x="90" y="173">Cart</text>
+<rect class="n" x="210" y="140" width="130" height="56" rx="10"/><text class="t" x="275" y="173">Payment</text>
+<polygon class="d" points="480,125 560,168 480,211 400,168"/><text class="t" x="480" y="173">Approved?</text>
+<rect class="n" x="620" y="60" width="130" height="56" rx="10"/><text class="t" x="685" y="93">Reserve stock</text>
+<rect class="n" x="620" y="230" width="130" height="56" rx="10"/><text class="t" x="685" y="263">Ask for new card</text>
+<rect class="n" x="780" y="140" width="100" height="56" rx="10"/><text class="t" x="830" y="173">Ship</text>
+<path class="e" marker-end="url(#a)" d="M150 168H210"/><path class="e" marker-end="url(#a)" d="M340 168H400"/>
+<path class="e" marker-end="url(#a)" d="M500 140L620 90"/><text class="l" x="545" y="105">yes</text>
+<path class="e" marker-end="url(#a)" d="M500 196L620 250"/><text class="l" x="545" y="240">no</text>
+<path class="e" marker-end="url(#a)" d="M750 90L830 140"/><path class="e" marker-end="url(#a)" d="M620 258C420 330 300 300 280 200"/>
+</svg></body></html>

@@ -92,7 +92,7 @@ describe("routeModel", () => {
 
   test("has one complete, normalized profile for every default candidate", () => {
     expect(new Set(DEFAULT_MODEL_CANDIDATES).size).toBe(DEFAULT_MODEL_CANDIDATES.length);
-    expect(MVP_MODEL_PROFILES.map((profile) => profile.model_slug)).toEqual([
+    expect(MVP_MODEL_PROFILES.map((profile): ModelSlug => profile.model_slug)).toEqual([
       ...DEFAULT_MODEL_CANDIDATES,
     ]);
 

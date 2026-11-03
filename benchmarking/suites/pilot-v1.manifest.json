@@ -1,0 +1,20 @@
+{
+  "version": "pilot-v1",
+  "seed": 20261028,
+  "scale": 1.0,
+  "counts": {
+    "livecodebench": 25,
+    "mbppplus": 10,
+    "math500": 20,
+    "gsm8k": 5,
+    "mmlu_pro": 25,
+    "ifeval": 20,
+    "bfcl_simple": 15,
+    "bfcl_multiple": 10,
+    "squad_v2": 20,
+    "longbench_v2": 15,
+    "wildchat": 35
+  },
+  "cases": 200,
+  "sha256": "88cbe3db5a0bec832812c0f51ea2af4216d90b437fcafaa4e9ae52e6606458fc"
+}

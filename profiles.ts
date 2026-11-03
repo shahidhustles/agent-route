@@ -6,6 +6,8 @@ export const MODEL_SLUGS = {
   gemmaDocument: "gemma-3-27b-it",
   glmFlash: "glm-5.3-flash",
   deepSeekFlash: "deepseek-v4.1-flash",
+  nemotronSuperVl: "nemotron-3.5-super-vl",
+  mimoFlash: "mimo-v2.6-flash",
 } as const;
 
 export type ModelSlug = (typeof MODEL_SLUGS)[keyof typeof MODEL_SLUGS];
@@ -15,6 +17,18 @@ export const COMMAND_CODE_BASE_URL = "https://api.commandcode.ai/provider/v1";
 export const PROVIDER_MODEL_IDS: Readonly<Partial<Record<ModelSlug, string>>> = {
   [MODEL_SLUGS.glmFlash]: "z-ai/glm-5.3-flash",
   [MODEL_SLUGS.deepSeekFlash]: "deepseek/deepseek-v4.1-flash",
+  [MODEL_SLUGS.nemotronSuperVl]: "nvidia/nemotron-3.5-super-vl",
+  [MODEL_SLUGS.mimoFlash]: "xiaomi/mimo-v2.6-flash",
+};
+
+/** USD per 1M tokens on the Command Code GOAT plan page, 2026-10-28. */
+export const PROVIDER_PRICES: Readonly<
+  Partial<Record<ModelSlug, Readonly<{ input: number; output: number }>>>
+> = {
+  [MODEL_SLUGS.glmFlash]: { input: 0.15, output: 0.5 },
+  [MODEL_SLUGS.deepSeekFlash]: { input: 0.15, output: 0.6 },
+  [MODEL_SLUGS.nemotronSuperVl]: { input: 0.2, output: 0.5 },
+  [MODEL_SLUGS.mimoFlash]: { input: 0.14, output: 0.28 },
 };
 
 export function providerModelId(modelSlug: ModelSlug): string {
@@ -53,6 +67,24 @@ export type ModelProfile = Readonly<{
     precision: string;
   }>;
 }>;
+
+/**
+ * Candidates of the outcome-trained Modal router (`training/modal_outcome_app.py`).
+ * The service holds their measured profiles itself; clients send only the task.
+ * The service sends a task to the preference's easy model when its easy-task
+ * score reaches the returned threshold, and to `fallback` otherwise.
+ */
+export const OUTCOME_ROUTER = {
+  router: "outcome-router-4m-v1",
+  fallback: MODEL_SLUGS.deepSeekFlash,
+} as const;
+
+export const OUTCOME_CANDIDATES: readonly ModelSlug[] = [
+  MODEL_SLUGS.deepSeekFlash,
+  MODEL_SLUGS.glmFlash,
+  MODEL_SLUGS.mimoFlash,
+  MODEL_SLUGS.nemotronSuperVl,
+];
 
 export const PROFILE_VERSION = "benchmark-v1-20260919T110437Z-272c";
 

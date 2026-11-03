@@ -1,5 +1,5 @@
-import { RouterChat } from "@/components/router-chat";
+import { Assistant } from "./assistant";
 
-export default function Home() {
-  return <RouterChat />;
+export default function Page() {
+  return <Assistant />;
 }

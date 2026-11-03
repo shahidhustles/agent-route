@@ -1,0 +1,103 @@
+{
+ "seed": 20261031,
+ "per_agent": 10,
+ "source_suite": "agents-v1",
+ "tasks": {
+  "code": [
+   "code-12-mbppplus-475",
+   "code-17-mbppplus-421",
+   "code-15-mbppplus-562",
+   "code-08-mbppplus-808",
+   "code-19-mbppplus-127",
+   "code-11-mbppplus-252",
+   "code-13-mbppplus-632",
+   "code-16-mbppplus-790",
+   "code-14-mbppplus-799",
+   "code-18-mbppplus-129"
+  ],
+  "spreadsheet": [
+   "sheet-18",
+   "sheet-03",
+   "sheet-02",
+   "sheet-14",
+   "sheet-16",
+   "sheet-20",
+   "sheet-12",
+   "sheet-15",
+   "sheet-17",
+   "sheet-11"
+  ],
+  "data-analysis": [
+   "analysis-20",
+   "analysis-10",
+   "analysis-15",
+   "analysis-19",
+   "analysis-01",
+   "analysis-05",
+   "analysis-07",
+   "analysis-06",
+   "analysis-02",
+   "analysis-09"
+  ],
+  "docx": [
+   "docx-16-event-plan",
+   "docx-17-training-outline",
+   "docx-09-project-charter",
+   "docx-11-newsletter",
+   "docx-19-architecture-decision",
+   "docx-13-rfp",
+   "docx-04-grant-proposal",
+   "docx-05-onboarding-guide",
+   "docx-10-safety-sop",
+   "docx-20-volunteer-handbook"
+  ],
+  "slides": [
+   "slides-08-budget-proposal",
+   "slides-04-kickoff",
+   "slides-09-hiring-plan",
+   "slides-13-sustainability",
+   "slides-03-security-training",
+   "slides-01-seed-pitch",
+   "slides-18-research-findings",
+   "slides-07-book-summary",
+   "slides-15-wedding-toast",
+   "slides-10-customer-qbr"
+  ],
+  "diagram": [
+   "diagram-07-class-library",
+   "diagram-12-support-escalation",
+   "diagram-03-ci-pipeline",
+   "diagram-01-oauth",
+   "diagram-02-ecommerce-er",
+   "diagram-09-login-flow",
+   "diagram-04-order-states",
+   "diagram-10-payment-sequence",
+   "diagram-06-org-chart",
+   "diagram-19-hospital-er"
+  ],
+  "map": [
+   "map-14-berlin-wall",
+   "map-02-la-roadtrip",
+   "map-16-everest-trek",
+   "map-08-mumbai-south",
+   "map-15-metro-territories",
+   "map-01-paris-walk",
+   "map-09-aus-east-coast",
+   "map-17-africa-hubs",
+   "map-03-tokyo-sights",
+   "map-04-london-landmarks"
+  ],
+  "scene-3d": [
+   "scene-09-chess-pieces",
+   "scene-14-rocket",
+   "scene-13-label-scene",
+   "scene-05-table-chairs",
+   "scene-04-neon-ring",
+   "scene-06-molecule",
+   "scene-07-city-block",
+   "scene-11-knot-showcase",
+   "scene-18-text-logo",
+   "scene-02-product-shot"
+  ]
+ }
+}

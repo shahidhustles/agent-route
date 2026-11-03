@@ -12,17 +12,33 @@ import torch
 from peft import LoraConfig, PeftModel, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments, set_seed
 from common import prompt
+import agent_router
+import outcome_router
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def encode(tokenizer, path, max_length, limit=0):
+def encode(tokenizer, path, max_length, limit=0, data_format='policy'):
     rows = []
     for line in path.read_text(encoding='utf-8').splitlines()[:limit or None]:
         row = json.loads(line)
-        prefix = tokenizer.encode(prompt(tokenizer, row['input']), add_special_tokens=False)
-        answer = tokenizer.encode(json.dumps(row['output'], separators=(',', ':')) + tokenizer.eos_token,
-                                  add_special_tokens=False)
+        if data_format == 'agent':
+            # An overlap task is one example per acceptable agent.
+            prefix = tokenizer.encode(agent_router.render(tokenizer, row['input']), add_special_tokens=False)
+            for agent in row['agents']:
+                answer = agent_router.target_ids(tokenizer, agent)
+                rows.append({'input_ids': prefix + answer, 'attention_mask': [1] * (len(prefix)+len(answer)),
+                             'labels': [-100] * len(prefix) + answer})
+            continue
+        if data_format == 'outcome':
+            if row['output'] is None:
+                continue
+            prefix = tokenizer.encode(outcome_router.render(tokenizer, row['input']), add_special_tokens=False)
+            answer = outcome_router.target_ids(tokenizer, row['output'])
+        else:
+            prefix = tokenizer.encode(prompt(tokenizer, row['input']), add_special_tokens=False)
+            answer = tokenizer.encode(json.dumps(row['output'], separators=(',', ':')) + tokenizer.eos_token,
+                                      add_special_tokens=False)
         if len(prefix) + len(answer) > max_length:
             raise ValueError(f'Example needs {len(prefix)+len(answer)} tokens; increase --max-length. Never truncate profiles or targets.')
         rows.append({'input_ids': prefix + answer, 'attention_mask': [1] * (len(prefix)+len(answer)),
@@ -66,14 +82,19 @@ def main():
     parser.add_argument('--batch-size', type=int, default=8)
     parser.add_argument('--resume', default=None)
     parser.add_argument('--adapter', type=Path)
+    parser.add_argument('--data-dir', type=Path, default=ROOT / 'data')
+    parser.add_argument('--format', choices=['policy', 'outcome', 'agent'], default='policy',
+                        help='outcome: slug-only targets from measured outcomes (training/outcome_data.py); '
+                             'agent: agent-name targets (routing/agents_eval.py split)')
+    parser.add_argument('--lr', type=float, default=2e-4)
     args = parser.parse_args()
     set_seed(26117)
     if not torch.cuda.is_available():
         raise RuntimeError('CUDA GPU unavailable. Install the documented CUDA PyTorch build or use a GPU training machine.')
     tokenizer = AutoTokenizer.from_pretrained(args.model, revision=args.revision)
     tokenizer.pad_token = tokenizer.eos_token
-    train_rows = encode(tokenizer, ROOT/'data/train.jsonl', args.max_length, args.limit)
-    validation_rows = encode(tokenizer, ROOT/'data/validation.jsonl', args.max_length, 16 if args.limit else 0)
+    train_rows = encode(tokenizer, args.data_dir/'train.jsonl', args.max_length, args.limit, args.format)
+    validation_rows = encode(tokenizer, args.data_dir/'validation.jsonl', args.max_length, 16 if args.limit else 0, args.format)
     # RTX 2050 supports fp16. Avoid training frozen weights in fp32 on a 4 GB GPU.
     model = AutoModelForCausalLM.from_pretrained(args.model, revision=args.revision,
         torch_dtype=torch.float16, attn_implementation='sdpa')
@@ -91,8 +112,9 @@ def main():
     full_run = args.max_steps <= 0
     training = TrainingArguments(output_dir=str(args.output), per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=1, gradient_accumulation_steps=args.accumulation,
-        num_train_epochs=args.epochs, max_steps=args.max_steps, learning_rate=2e-4,
-        warmup_ratio=.03, lr_scheduler_type='cosine', fp16=True,
+        num_train_epochs=args.epochs, max_steps=args.max_steps, learning_rate=args.lr,
+        warmup_steps=.03,  # transformers 5: a float below 1 is a ratio of total steps
+        lr_scheduler_type='cosine', fp16=True,
         gradient_checkpointing=True, gradient_checkpointing_kwargs={'use_reentrant': False},
         logging_steps=1 if args.max_steps > 0 else 10, save_steps=50, save_total_limit=2,
         eval_strategy='epoch' if full_run else 'no',
@@ -117,7 +139,7 @@ def main():
     merged.config.use_cache = True
     merged.save_pretrained(args.output / 'merged', safe_serialization=True)
     tokenizer.save_pretrained(args.output / 'merged')
-    data_manifest_path = ROOT/'data/manifest.json'
+    data_manifest_path = args.data_dir/'manifest.json'
     data_manifest = json.loads(data_manifest_path.read_text())
     report = {'base_model':args.model, 'resolved_revision':revision,
         'initial_adapter':str(args.adapter) if args.adapter else None,
@@ -131,11 +153,13 @@ def main():
         'best_validation_loss':trainer.state.best_metric,
         'gpu':torch.cuda.get_device_name(0), 'peak_gpu_bytes':torch.cuda.max_memory_allocated(),
         'adapter_b_norm_sum':adapter_norm,
-        'dataset_sha256':hashlib.sha256((ROOT/'data/train.jsonl').read_bytes()).hexdigest(),
-        'validation_sha256':hashlib.sha256((ROOT/'data/validation.jsonl').read_bytes()).hexdigest(),
+        'dataset_sha256':hashlib.sha256((args.data_dir/'train.jsonl').read_bytes()).hexdigest(),
+        'validation_sha256':hashlib.sha256((args.data_dir/'validation.jsonl').read_bytes()).hexdigest(),
         'data_manifest_sha256':hashlib.sha256(data_manifest_path.read_bytes()).hexdigest(),
-        'profile_version':data_manifest['profile_version'],
-        'profile_sha256':data_manifest['profile_source']['sha256'],
+        'data_format':args.format,
+        'profile_version':data_manifest.get('profile_version'),
+        'profile_sha256':(data_manifest.get('profile_source') or {}).get('sha256'),
+        'outcome_runs':data_manifest.get('runs'), 'objective':data_manifest.get('objective'),
         'torch':torch.__version__, 'arguments':{k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}}
     (args.output/'training-report.json').write_text(json.dumps(report, indent=2))
     print(json.dumps(report, indent=2))

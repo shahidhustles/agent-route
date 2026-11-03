@@ -1,20 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
+import type { ReactNode } from "react";
+
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
-const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
+const chat = Inter({ subsets: ["latin"], variable: "--font-chat" });
 
 export const metadata: Metadata = {
-  title: "Model Router",
-  description: "Route each task to the model best suited to handle it.",
+  title: "Relay",
+  description: "Route a task to an agent and a model, watch it run, and read the result.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${geist.variable} ${geistMono.variable}`}>{children}</body>
+    <html className={chat.variable} lang="en">
+      <body>
+        <TooltipProvider>{children}</TooltipProvider>
+        <Toaster />
+      </body>
     </html>
   );
 }

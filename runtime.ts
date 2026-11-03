@@ -170,3 +170,65 @@ export async function selectSessionModel(options: {
   }
   throw new Error("No candidate model could be loaded");
 }
+
+/** Request body of the outcome-trained Modal router. Profiles live on the server. */
+export const outcomeRequestSchema = z
+  .object({
+    user_task: z.string().trim().min(1),
+    requires_tools: z.boolean().default(false),
+    preference: z.enum(["balanced", "cheap", "fast", "accurate"]).default("balanced"),
+  })
+  .strict();
+/**
+ * `probabilities` are the router's own likelihoods over candidate slugs (sum 1).
+ * `easy_score` is the probability of the fastest model. At or above `threshold`
+ * the task goes to the preference's easy model, else to the strongest model.
+ * `confidence` is the probability of the returned slug, so a fallback or cheap
+ * pick can carry a low confidence; use `easy_score` to explain a pick.
+ */
+export const outcomeResultSchema = z.object({
+  model_slug: z.string().min(1),
+  confidence: score,
+  probabilities: z.record(z.string(), score),
+  threshold: score,
+  preference: z.string().optional(),
+  easy_score: score.optional(),
+  routing_ms: z.number().nonnegative(),
+  router: z.string().optional(),
+  base_revision: z.string().optional(),
+});
+export type OutcomeRequest = z.input<typeof outcomeRequestSchema>;
+export type OutcomeResult = z.infer<typeof outcomeResultSchema>;
+
+export function createOutcomeRouter(options: {
+  url: string;
+  tokenId: string;
+  tokenSecret: string;
+  timeoutMs?: number;
+}) {
+  const url = new URL(options.url);
+  if (url.protocol !== "https:" || !url.hostname.endsWith(".modal.run"))
+    throw new Error("Modal router URL must use HTTPS on modal.run");
+  return async (input: OutcomeRequest): Promise<OutcomeResult> => {
+    const request = outcomeRequestSchema.parse(input);
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Modal-Key": options.tokenId,
+        "Modal-Secret": options.tokenSecret,
+      },
+      body: JSON.stringify(request),
+      redirect: "error",
+      // The first call after scale-down loads the model on a cold GPU container.
+      signal: AbortSignal.timeout(options.timeoutMs ?? 300_000),
+    });
+    if (!response.ok) throw new Error(`Modal router returned HTTP ${response.status}`);
+    const body = (await response.json()) as Record<string, unknown>;
+    if (typeof body.error === "string") throw new Error(`Modal router error: ${body.error}`);
+    const result = outcomeResultSchema.parse(body);
+    if (!(result.model_slug in result.probabilities))
+      throw new Error("Modal router picked a slug outside its probabilities");
+    return result;
+  };
+}

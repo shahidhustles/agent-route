@@ -196,10 +196,10 @@ step "The next command opens Modal. Sign in, approve the token, then return here
 "${MODAL[@]}" token info
 
 stage "Deploy the learned router"
-say "This builds the pinned Qwen3-0.6B image, uploads the trained LoRA adapter, and deploys a protected endpoint."
-confirm "Deploy agent-route-qwen-router on a Modal T4 now?" || { warn "deployment cancelled"; exit 1; }
+say "This builds the pinned Qwen3-0.6B image, uploads the outcome-trained LoRA adapter and serving.json, and deploys a protected endpoint."
+confirm "Deploy agent-route-outcome-router on a Modal T4 now?" || { warn "deployment cancelled"; exit 1; }
 deploy_log=$(mktemp)
-"${MODAL[@]}" deploy training/modal_app.py 2>&1 | tee "$deploy_log"
+"${MODAL[@]}" deploy training/modal_outcome_app.py 2>&1 | tee "$deploy_log"
 MODAL_ROUTER_URL=$(grep -Eo 'https://[^ ]+\.modal\.run' "$deploy_log" | tail -n1 || true)
 rm -f "$deploy_log"
 if [[ -z "$MODAL_ROUTER_URL" ]]; then

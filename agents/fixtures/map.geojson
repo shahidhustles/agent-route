@@ -1,0 +1,5 @@
+{"type":"FeatureCollection","features":[
+{"type":"Feature","properties":{"name":"Eiffel Tower"},"geometry":{"type":"Point","coordinates":[2.2945,48.8584]}},
+{"type":"Feature","properties":{"name":"Louvre"},"geometry":{"type":"Point","coordinates":[2.3376,48.8606]}},
+{"type":"Feature","properties":{"name":"Notre-Dame"},"geometry":{"type":"Point","coordinates":[2.3500,48.8530]}},
+{"type":"Feature","properties":{"name":"Walk"},"geometry":{"type":"LineString","coordinates":[[2.2945,48.8584],[2.3376,48.8606],[2.3500,48.8530]]}}]}

@@ -1,0 +1,27 @@
+{
+  "version": "full-v1",
+  "seed": 20261028,
+  "scale": 1.0,
+  "mix": "full",
+  "hard": true,
+  "excluded_suites": [
+    "pilot-v1"
+  ],
+  "counts": {
+    "livecodebench": 120,
+    "mbppplus": 20,
+    "math500": 90,
+    "gsm8k": 10,
+    "mmlu_pro": 100,
+    "ifeval": 80,
+    "bfcl_simple": 10,
+    "bfcl_multiple": 20,
+    "bfcl_live_simple": 10,
+    "bfcl_live_multiple": 20,
+    "squad_v2": 40,
+    "longbench_v2": 60,
+    "wildchat": 220
+  },
+  "cases": 800,
+  "sha256": "16c5c06ff470326501af5aba8914c852c92d17f549a9d85f3e0c8c10f8ae0c9d"
+}

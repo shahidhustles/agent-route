@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { autoCandidates, registrySchema } from "./registry";
 import {
   createLocalRouter,
+  createOutcomeRouter,
   eligibleRequest,
   selectSessionModel,
   type RoutingRequest,
@@ -251,4 +252,43 @@ test("registry excludes hosted and disabled entries from Auto", () => {
   );
   expect(autoCandidates(entries)).toHaveLength(5);
   expect(() => registrySchema.parse([...entries, entries[0]])).toThrow("unique");
+});
+
+describe("outcome router client", () => {
+  const options = { url: "https://r.modal.run", tokenId: "id", tokenSecret: "secret" };
+  const withFetch = async (body: unknown, run: () => Promise<void>) => {
+    const original = globalThis.fetch;
+    globalThis.fetch = (async () => Response.json(body)) as unknown as typeof fetch;
+    try {
+      await run();
+    } finally {
+      globalThis.fetch = original;
+    }
+  };
+
+  test("rejects non-Modal URLs", () => {
+    expect(() => createOutcomeRouter({ ...options, url: "http://r.modal.run" })).toThrow("HTTPS");
+    expect(() => createOutcomeRouter({ ...options, url: "https://example.com" })).toThrow(
+      "modal.run",
+    );
+  });
+
+  test("surfaces service errors and picks outside the probabilities", async () => {
+    const route = createOutcomeRouter(options);
+    await withFetch({ error: "user_task must be a nonempty string" }, async () => {
+      await expect(route({ user_task: "x" })).rejects.toThrow("nonempty");
+    });
+    await withFetch(
+      {
+        model_slug: "other",
+        confidence: 0.5,
+        probabilities: { a: 1 },
+        threshold: 0.86,
+        routing_ms: 1,
+      },
+      async () => {
+        await expect(route({ user_task: "x" })).rejects.toThrow("outside");
+      },
+    );
+  });
 });

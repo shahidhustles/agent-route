@@ -1,9 +1,17 @@
-import { eligibleRequest, resultSchema, type RoutingRequest, type RoutingResult } from "./runtime";
+import {
+  createOutcomeRouter,
+  eligibleRequest,
+  type OutcomeResult,
+  type RoutingRequest,
+} from "./runtime";
 import {
   COMMAND_CODE_BASE_URL,
   MODEL_SLUGS,
   MVP_MODEL_PROFILES,
+  OUTCOME_CANDIDATES,
+  OUTCOME_ROUTER,
   PROFILE_VERSION,
+  PROVIDER_PRICES,
   providerModelId,
   type ModelProfile,
   type ModelSlug,
@@ -59,7 +67,6 @@ export function parseArgs(args: readonly string[]) {
     task: valueAfter("--task"),
     maxCostUsd: Number(valueAfter("--max-cost-usd") ?? 0),
     routerUrl: valueAfter("--router-url") ?? process.env.MODAL_ROUTER_URL,
-    availableVramGb: Number(valueAfter("--available-vram-gb") ?? 0) || undefined,
     requiresTools: args.includes("--requires-tools"),
     interactive: args.includes("--interactive"),
     executeProvider: args.includes("--execute-provider"),
@@ -75,15 +82,6 @@ function percent(value: number): string {
 
 function line(label: string, value: unknown): void {
   process.stdout.write(`${label.padEnd(22)} ${String(value)}\n`);
-}
-
-export function displayConfidence(rawConfidence: number): number {
-  const binaryChoiceFloor = 0.5;
-  const displayCeiling = 0.99;
-  const midpoint = 0.625;
-  const spread = 40;
-  const scaled = 1 / (1 + Math.exp(-spread * (rawConfidence - midpoint)));
-  return binaryChoiceFloor + (displayCeiling - binaryChoiceFloor) * scaled;
 }
 
 export async function loadSavedRun(path = new URL("./demo/saved-run.json", import.meta.url)) {
@@ -142,28 +140,14 @@ async function readTask(): Promise<string> {
 
 export async function routeWithModal(
   urlValue: string | undefined,
-  request: RoutingRequest,
-): Promise<RoutingResult> {
+  request: Readonly<{ user_task: string; requires_tools: boolean }>,
+): Promise<OutcomeResult> {
   if (!urlValue) throw new Error("Interactive mode requires MODAL_ROUTER_URL or --router-url");
-  const url = new URL(urlValue);
-  if (url.protocol !== "https:" || !url.hostname.endsWith(".modal.run"))
-    throw new Error("Modal router URL must use HTTPS on modal.run");
   const tokenId = process.env.MODAL_PROXY_TOKEN_ID;
   const tokenSecret = process.env.MODAL_PROXY_TOKEN_SECRET;
   if (!tokenId || !tokenSecret)
     throw new Error("Set MODAL_PROXY_TOKEN_ID and MODAL_PROXY_TOKEN_SECRET");
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Modal-Key": tokenId,
-      "Modal-Secret": tokenSecret,
-    },
-    body: JSON.stringify(request),
-  });
-  if (!response.ok) throw new Error(`Modal router returned HTTP ${response.status}`);
-  const body = (await response.json()) as Record<string, unknown>;
-  return resultSchema.parse({ model_slug: body.model_slug, confidence: body.confidence });
+  return createOutcomeRouter({ url: urlValue, tokenId, tokenSecret })(request);
 }
 
 async function executeLive(
@@ -174,8 +158,8 @@ async function executeLive(
   expected?: string,
 ): Promise<Execution> {
   if (!process.env.CMD_API_KEY) throw new Error("Live mode requires CMD_API_KEY");
-  const price =
-    modelSlug === MODEL_SLUGS.glmFlash ? { input: 0.15, output: 0.5 } : { input: 0.3, output: 1.2 };
+  const price = PROVIDER_PRICES[modelSlug];
+  if (!price) throw new Error(`No price for ${modelSlug}`);
   const inputUpperBound = new TextEncoder().encode(task).length;
   const projectedCost = (inputUpperBound * price.input + maxTokens * price.output) / 1_000_000;
   if (projectedCost > maxCostUsd)
@@ -278,21 +262,14 @@ export async function runSavedDemo(options: ReturnType<typeof parseArgs>): Promi
 
 export async function runInteractiveDemo(options: ReturnType<typeof parseArgs>): Promise<void> {
   const task = options.task?.trim() || (await readTask());
-  const request = eligibleRequest({
-    user_task: task,
-    candidate_models: [...DEMO_MODELS],
-    profiles: [...DEMO_PROFILES],
-    requires_tools: options.requiresTools,
-    input_tokens: Math.max(1, Math.ceil(task.length / 4)),
-    available_vram_gb: options.availableVramGb,
-  });
+  const request = { user_task: task, requires_tools: options.requiresTools };
   process.stdout.write("\nEXACT ROUTER REQUEST\n");
   process.stdout.write(`${JSON.stringify(request, null, 2)}\n`);
   const started = performance.now();
   const selection = await routeWithModal(options.routerUrl, request);
-  const routingTime = performance.now() - started;
-  if (!request.candidate_models.includes(selection.model_slug))
-    throw new Error("Modal router selected an ineligible model");
+  const roundTrip = performance.now() - started;
+  if (!OUTCOME_CANDIDATES.includes(selection.model_slug as ModelSlug))
+    throw new Error("Modal router selected an unknown model");
   const providerPayload = {
     model: providerModelId(selection.model_slug as ModelSlug),
     messages: [{ role: "user", content: task }],
@@ -300,9 +277,14 @@ export async function runInteractiveDemo(options: ReturnType<typeof parseArgs>):
     max_tokens: 256,
   };
   process.stdout.write("\nLEARNED ROUTER SELECTION\n");
+  line("Router", selection.router ?? OUTCOME_ROUTER.router);
   line("Selected model", selection.model_slug);
-  line("Routing confidence", displayConfidence(selection.confidence).toFixed(3));
-  line("Routing time", `${routingTime.toFixed(1)} ms`);
+  line("Confidence", selection.confidence.toFixed(3));
+  for (const [slug, probability] of Object.entries(selection.probabilities))
+    line(`  P(${slug})`, probability.toFixed(3));
+  line("Easy score", selection.easy_score?.toFixed(3) ?? "n/a");
+  line("Rule", `easy model if score >= ${selection.threshold}, else ${OUTCOME_ROUTER.fallback}`);
+  line("Routing time", `${selection.routing_ms} ms on GPU, ${roundTrip.toFixed(0)} ms round trip`);
   process.stdout.write("\nEXACT COMMAND CODE REQUEST\n");
   process.stdout.write(`${JSON.stringify(providerPayload, null, 2)}\n`);
   if (!options.executeProvider) {
@@ -335,7 +317,7 @@ function usage(): void {
   bun run demo -- --example fast      Play the DeepSeek example
   bun run demo -- --example quality   Play the GLM example
   bun run demo -- --task "<exact>"    Enter one prepared task verbatim
-  bun run demo -- --interactive        Paste any task and call the learned Modal router
+  bun run demo -- --interactive        Paste any task and call the outcome-trained Modal router
 
 Saved playback is the default and never contacts Command Code. Live mode requires explicit paid-call guards.
 `);

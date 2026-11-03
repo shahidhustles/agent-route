@@ -11,3 +11,17 @@ node_modules/
 .env.local
 .next/
 *.tsbuildinfo
+# Large generated suites; the manifest records seed and hash.
+benchmarking/suites/pilot-*.jsonl
+benchmarking/suites/pool-*.jsonl
+benchmarking/suites/full-*.jsonl
+.taste-skill/
+agents/opencode/skills-files/
+agents/opencode/.skills-src/
+agents/sandbox/.ctx.*/
+agents/sandbox/build.log
+
+# Local tool state
+.claude/
+.commandcode/
+.hallmark/

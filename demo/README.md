@@ -56,16 +56,9 @@ scripts/setup-modal-router.sh
 
 The wizard handles Modal login, deployment, endpoint protection, `.env.modal`, and a route-only smoke test.
 
-Set the deployed endpoint URL and proxy-token values in `.env.modal`. Put the AI Gateway key in the ignored `.env.local` file:
+Set the deployed endpoint URL and proxy-token values in `.env.modal`.
 
-```sh
-AI_GATEWAY_API_KEY=your-key
-bun run demo:interactive
-```
-
-Open `http://localhost:3000`, submit a task, and confirm the routing message changes into a model and confidence chip before the response begins.
-
-The setup wizard stores the Modal values in `.env.modal`, and the package command loads that ignored file automatically. Use `bun run demo:cli` for the original paste-in terminal flow. That command does not call Command Code unless you also pass `--execute-provider --allow-paid-call --max-cost-usd AMOUNT` and set both `CMD_API_KEY` and `DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND`.
+The setup wizard stores the Modal values in `.env.modal`, and the package command loads that ignored file automatically. Run `bun run demo:cli` to paste tasks into the router from the terminal. That command does not call Command Code unless you also pass `--execute-provider --allow-paid-call --max-cost-usd AMOUNT` and set both `CMD_API_KEY` and `DEMO_ALLOW_PAID_CALLS=I_UNDERSTAND`.
 
 ## Review sequence
 

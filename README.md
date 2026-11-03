@@ -52,20 +52,7 @@ bun run demo
 
 It presents both measured profiles, two opposite model selections, saved model responses and execution metrics, and the offline strategy comparison. See [demo/README.md](demo/README.md) for the prepared cases and Colab command.
 
-After deploying `training/modal_app.py`, `bun run demo:interactive` starts the browser chat at `http://localhost:3000`. Each prompt goes to the fine-tuned Qwen router first. The selected model and confidence appear before the answer streams. The original terminal flow remains available through `bun run demo:cli`.
-
-## Code artifact agent
-
-`/agent` hosts the single-purpose code artifact agent. Each prompt goes to the Modal router, and the selected model streams Python through Command Code into a browser editor. Run executes the snippet with Pyodide without leaving the page.
-
-It needs the Modal router variables plus `CMD_API_KEY` in `.env.modal`:
-
-```sh
-CMD_API_KEY=your-key
-bun run demo:interactive
-```
-
-Open `http://localhost:3000/agent`, submit a prompt, and the routing chip resolves into a model and confidence before code streams. Versions stay in the tab; nothing is persisted.
+After deploying `training/modal_outcome_app.py`, `bun run demo:cli` sends pasted tasks to the outcome-trained Qwen router, which picks DeepSeek V4.1 Flash or Nemotron 3.5 Super VL and returns both probabilities.
 
 ## Router service
 
@@ -92,6 +79,33 @@ const result = await route({
 ```
 
 `registry.example.json` shows how to associate profiles with OpenAI-compatible endpoints. Its local ports and served-model IDs are examples.
+
+## Web app
+
+One screen: type a task, see which agent and model the router chose and why, watch the agent run in its Docker sandbox, and read the output in the block that fits it (code, spreadsheet, data analysis, document, slides, diagram, map, 3D scene). Design tokens are in `docs/specs/ui-design.md`.
+
+Two processes, both bound to localhost. Run each in its own terminal from the repo root.
+
+```bash
+# 1. Backend: router, outcome memory, agent runs, spend cap (loads the embedding model, about 10 s)
+.venv/bin/python routing/server.py --port 8765 --max-usd 0.25
+
+# 2. Web app on http://127.0.0.1:3001 (reads the Modal router settings from .env.modal)
+bun install
+bun run web
+```
+
+Needs Docker with the `agent-route-opencode` image (`agents/sandbox/build.sh`) and `CMD_API_KEY` in `.env.modal`. The key stays in the backend process and the host proxy; the browser and the containers never see it.
+
+- **Run an agent.** The agent router picks the agent and model from past outcomes. Pick a preference (cheap by default), press the run button. Below a 50% vote share the app shows the top two agents and waits for your pick.
+- **Just answer.** The Modal model router picks the model, then one Command Code call answers.
+- **Result.** Agent, model, confidence, runner-up, cost, wall time, and whether the output passed its contract. A failed contract shows the error and the raw files, with a one-click rerun on DeepSeek.
+- **Memory.** A finished run is appended to `data/memory/online.jsonl` with no verdict. Press Good or Bad and the next route counts it.
+- **Recorded examples.** The second tab opens finished runs from `agents-cc-20261031` in each block, with no model call.
+- **Spend cap.** The backend keeps its own ledger (`benchmarking/results/agents-ui-ledger.jsonl`). Click the cap in the top right to change it. A `weekly usage limit` reply stops live calls; routing and recorded examples keep working.
+- **From curl.** `POST /api/py/route`, `POST /api/py/runs`, then `GET /api/py/runs/<id>/events` for the progress stream. The endpoints are listed in the `routing/server.py` docstring.
+
+Generated output is untrusted. Markdown renders without raw HTML, Mermaid runs at `securityLevel: "strict"`, scenes are declarative json-render specs, and code is shown, never run.
 
 ## Current evidence
 

@@ -1,0 +1,36 @@
+{
+  "version": "agents-v1",
+  "seed": 20261028,
+  "tasks": 200,
+  "groups": {
+    "code": 20,
+    "spreadsheet": 20,
+    "data-analysis": 20,
+    "docx": 20,
+    "slides": 20,
+    "diagram": 20,
+    "map": 20,
+    "scene-3d": 20,
+    "overlap": 40
+  },
+  "runs_per_model": {
+    "code": 40,
+    "spreadsheet": 46,
+    "data-analysis": 40,
+    "docx": 28,
+    "slides": 34,
+    "diagram": 26,
+    "map": 26,
+    "scene-3d": 20
+  },
+  "runs_per_model_total": 260,
+  "code_sources": {
+    "livecodebench": 4,
+    "mbppplus": 16
+  },
+  "excluded_suites": [
+    "pilot-v1",
+    "full-v1"
+  ],
+  "sha256": "9ef57dc328be81d455d69b1911d10eeb7d021f3c0efa5d809652b08286403d81"
+}

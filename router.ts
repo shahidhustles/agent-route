@@ -330,7 +330,7 @@ export function routeStrategy(
   }
   if (strategy === "learned") {
     if (!input.learned) throw new Error("Learned routing requires a learned callback");
-    return checkedResult(input, strategy, input.learned, "Qwen3 router checkpoint");
+    return checkedResult(input, strategy, input.learned, "outcome-trained Qwen3 router");
   }
   return checkedResult(
     input,
