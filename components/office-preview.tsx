@@ -22,13 +22,13 @@ export function OfficePreview({ runId, name }: { runId: string; name: string }) 
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
-  const href = `/api/py/runs/${runId}/file/${name}`;
+  const href = `/api/runs/${runId}/file/${name}`;
 
   useEffect(() => {
     const controller = new AbortController();
     setManifest(null);
     setError(null);
-    fetch(`/api/py/runs/${runId}/preview/${name}`, { signal: controller.signal })
+    fetch(`/api/runs/${runId}/preview/${name}`, { signal: controller.signal })
       .then(async (r) => {
         const data = await r.json().catch(() => null);
         if (!r.ok) throw new Error(data?.error ?? `The preview failed (HTTP ${r.status}).`);

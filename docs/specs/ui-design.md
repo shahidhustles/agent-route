@@ -22,7 +22,7 @@ Routing metadata is hidden behind the reply information button. Its dialog conta
 
 ## Artifacts and navigation
 
-All eight artifact types use the existing ArtifactView and block renderers. A reply card opens the preview again. Recorded artifacts are available in a sidebar library with no model calls. Conversations use assistant-ui's local thread list, without Assistant Cloud. This list is session-local.
+All eight artifact types use the existing ArtifactView and block renderers. A reply card opens the preview again. Recorded artifacts are available in a sidebar library with no model calls. Conversations use assistant-ui's remote thread list with a Supabase adapter, without Assistant Cloud, so the sidebar list and old chats survive reload and sign-in on another browser. Without Supabase keys the list is session-local. A reopened chat shows its saved steps, and its artifact card opens the preview from private Storage.
 
 ## Account
 
