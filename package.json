@@ -19,8 +19,8 @@
     "python:test": "python -m unittest discover -s training -p 'test_*.py' && python -m unittest discover -s benchmarking -p 'test_*.py' && python -m unittest discover -s evaluation -p 'test_*.py' && python -m unittest discover -s agents -p 'test_*.py' && python -m unittest discover -s routing -p 'test_*.py'",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
-    "web": "bun --env-file=.env.modal next dev -H 127.0.0.1 -p 3001",
-    "web:prod": "next build && bun --env-file=.env.modal next start -H 127.0.0.1 -p 3001",
+    "web": "bun --env-file=.env.modal next dev -H localhost -p 3001",
+    "web:prod": "next build && bun --env-file=.env.modal next start -H localhost -p 3001",
     "web:backend": ".venv/bin/python routing/server.py --port 8765",
     "build:web": "next build"
   },
@@ -29,6 +29,7 @@
     "@assistant-ui/ai-sdk": "^0.0.16",
     "@assistant-ui/react": "^0.15.32",
     "@assistant-ui/react-markdown": "^0.14.24",
+    "@clerk/nextjs": "^7.9.23",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/state": "^6.7.6",
     "@codemirror/theme-one-dark": "^6.1.3",

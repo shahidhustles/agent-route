@@ -1,5 +1,11 @@
-import { afterEach, expect, spyOn, test } from "bun:test";
-import { POST } from "./route";
+import { afterEach, expect, mock, spyOn, test } from "bun:test";
+
+let signedIn = true;
+mock.module("@/lib/require-user", () => ({
+  rejectAnonymous: async () =>
+    signedIn ? null : Response.json({ error: "Sign in to use Relay." }, { status: 401 }),
+}));
+const { POST } = await import("./route");
 const originalFetch = globalThis.fetch;
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -76,4 +82,13 @@ test("backend down becomes readable chat text", async () => {
     new Request("http://localhost/api/chat", { method: "POST", body: JSON.stringify(prompt) }),
   );
   expect(await response.text()).toContain("The backend is unavailable");
+});
+
+test("a signed-out request is rejected before any backend call", async () => {
+  signedIn = false;
+  const fetchSpy = spyOn(globalThis, "fetch");
+  const response = await POST(new Request("http://x/api/chat", { method: "POST", body: "{}" }));
+  signedIn = true;
+  expect(response.status).toBe(401);
+  expect(fetchSpy).not.toHaveBeenCalled();
 });
