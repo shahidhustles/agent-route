@@ -39,7 +39,6 @@ import {
   Copy,
   FileText,
   Paperclip,
-  Command,
   ChevronRight,
   Library,
   Terminal,
@@ -50,6 +49,7 @@ import {
 import { parse } from "papaparse";
 import { toast } from "sonner";
 import { AccountFooter } from "@/components/account-footer";
+import { RelayLogo } from "@/components/relay-logo";
 import { ThreadListItems } from "@/components/assistant-ui/elements/thread-list.aui";
 import { MarkdownText } from "@/components/assistant-ui/elements/markdown-text";
 import {
@@ -311,7 +311,7 @@ function ChatShell({
       )}
       <aside className={`chat-sidebar ${sidebar ? "is-open" : ""}`} aria-label="Navigation">
         <div className="sidebar-brand">
-          <Command size={22} strokeWidth={1.6} />
+          <RelayLogo />
           <span>Relay</span>
           <button
             className="icon-button mobile-only"

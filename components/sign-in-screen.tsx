@@ -1,7 +1,7 @@
 "use client";
 
 import { useSignIn } from "@clerk/nextjs";
-import { Command } from "lucide-react";
+import { RelayLogo } from "@/components/relay-logo";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,7 @@ export function SignInScreen() {
   return (
     <main className="auth-screen">
       <div className="auth-card">
-        <Command size={28} strokeWidth={1.6} />
+        <RelayLogo size={40} />
         <h1>Sign in to Relay</h1>
         <p>Route a task to an agent and a model, watch it run, and read the result.</p>
         <Button

@@ -1,10 +1,10 @@
-import { Command } from "lucide-react";
+import { RelayLogo } from "@/components/relay-logo";
 
 export function SetupNeeded() {
   return (
     <main className="auth-screen">
       <div className="auth-card">
-        <Command size={28} strokeWidth={1.6} />
+        <RelayLogo size={40} />
         <h1>Finish the Clerk setup</h1>
         <p>
           Relay needs Clerk keys before it can start. Add these two lines to <code>.env.local</code>{" "}
