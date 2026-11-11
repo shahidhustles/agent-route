@@ -15,12 +15,12 @@ export function HtmlPreview({ runId, name, height = "h-[560px]" }: { runId: stri
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         <p className="min-w-0 truncate text-sm text-ash">{name}</p>
-        <a className={buttonVariants({ size: "sm", variant: "outline" })} download href={`/api/py/runs/${runId}/file/${name}`}>
+        <a className={buttonVariants({ size: "sm", variant: "outline" })} download href={`/api/runs/${runId}/file/${name}`}>
           <DownloadIcon aria-hidden className="size-3.5" />
           Download {name}
         </a>
       </div>
-      <iframe className={`${height} w-full border bg-white`} referrerPolicy="no-referrer" sandbox="allow-scripts" src={`/api/py/runs/${runId}/view/${name}`} title={name} />
+      <iframe className={`${height} w-full border bg-white`} referrerPolicy="no-referrer" sandbox="allow-scripts" src={`/api/runs/${runId}/view/${name}`} title={name} />
     </div>
   );
 }

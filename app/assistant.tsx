@@ -2,7 +2,9 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useUser } from "@clerk/nextjs";
 import { AssistantChatTransport, useChatRuntime } from "@assistant-ui/ai-sdk";
+import type { ChatTransport, UIMessage } from "ai";
 import {
   AssistantRuntimeProvider,
   ThreadPrimitive,
@@ -12,9 +14,18 @@ import {
   AuiIf,
   useAui,
   useAuiState,
+  useRemoteThreadListRuntime,
   type ToolCallMessagePartComponent,
 } from "@assistant-ui/react";
-import { useState, useRef, useEffect, useMemo, createContext, useContext } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  createContext,
+  useContext,
+  type ReactNode,
+} from "react";
 import {
   ArrowUp,
   Plus,
@@ -79,6 +90,11 @@ import {
 import { chatMeta, type ChatMeta, type ArtifactSelection } from "@/lib/chat-meta";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { csvSizeError } from "@/lib/route-state";
+import { createThreadListAdapter, type Db } from "@/lib/persistence/conversations";
+import { useSupabaseAdapters } from "@/lib/persistence/history";
+import { saveRun, saveVerdict } from "@/lib/persistence/runs";
+import { supabaseConfigured } from "@/lib/supabase/config";
+import { useSupabase } from "@/lib/supabase/client";
 
 type Options = {
   preference: Preference;
@@ -91,6 +107,8 @@ const ChatContext = createContext<{
   options: Options;
   setOptions: React.Dispatch<React.SetStateAction<Options>>;
   openArtifact: (value: ArtifactSelection | null) => void;
+  /** Stores a thumbs verdict with the run. Absent when history is not saved. */
+  saveVerdict?: (runId: string, passed: boolean) => Promise<void>;
 }>({ options: initial, setOptions: () => {}, openArtifact: () => {} });
 const useChat = () => useContext(ChatContext);
 const titleCase = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -98,28 +116,130 @@ const errorText = (e: unknown) =>
   e instanceof Error ? e.message : "Something went wrong. Try again.";
 
 export function Assistant() {
+  return supabaseConfigured() ? <SavedAssistant /> : <LocalAssistant footer={<AccountFooter />} />;
+}
+
+function useChatOptions(injected?: ChatTransport<UIMessage>) {
   const [options, setOptions] = useState(initial);
   const latest = useRef(options);
   latest.current = options;
   const transport = useMemo(
-    () => new AssistantChatTransport({ api: "/api/chat", body: () => latest.current }),
-    [],
+    () => injected ?? new AssistantChatTransport({ api: "/api/chat", body: () => latest.current }),
+    [injected],
   );
-  const runtime = useChatRuntime({
-    transport,
-    onFinish: () => setOptions((o) => ({ ...o, override: null })),
-  });
+  const onFinish = () => setOptions((o) => ({ ...o, override: null }));
+  return { options, setOptions, transport, onFinish };
+}
+
+/** Chats live in memory and vanish on reload. Used when Supabase is not configured. */
+function LocalAssistant({ footer }: { footer: ReactNode }) {
+  const { options, setOptions, transport, onFinish } = useChatOptions();
+  const runtime = useChatRuntime({ transport, onFinish });
   const [artifact, openArtifact] = useState<ArtifactSelection | null>(null);
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <ChatContext.Provider value={{ options, setOptions, openArtifact }}>
-        <ChatShell artifact={artifact} />
+        <ChatShell artifact={artifact} footer={footer} />
       </ChatContext.Provider>
     </AssistantRuntimeProvider>
   );
 }
 
-function ChatShell({ artifact }: { artifact: ArtifactSelection | null }) {
+/** Waits for the Clerk session, because the first Supabase request has to carry its token. */
+function SavedAssistant() {
+  const { isLoaded, user } = useUser();
+  const db = useSupabase();
+  if (!isLoaded || !user || !db) return <div className="auth-screen" aria-busy="true" />;
+  return <PersistedAssistant db={db} userId={user.id} footer={<AccountFooter />} />;
+}
+
+/** Chats, messages and finished runs saved to Supabase, so the sidebar list and old chats survive reload. */
+export function PersistedAssistant({
+  db,
+  userId,
+  footer,
+  transport: injected,
+}: {
+  db: Db;
+  userId: string;
+  footer: ReactNode;
+  transport?: ChatTransport<UIMessage>;
+}) {
+  const { options, setOptions, transport, onFinish } = useChatOptions(injected);
+  const adapter = useMemo(
+    () => ({
+      ...createThreadListAdapter(db),
+      unstable_useAdapters: function useAdapters() {
+        return useSupabaseAdapters(db);
+      },
+    }),
+    [db],
+  );
+  const runtime = useRemoteThreadListRuntime({
+    runtimeHook: function RuntimeHook() {
+      return useChatRuntime({ transport, onFinish });
+    },
+    adapter,
+  });
+  const [artifact, openArtifact] = useState<ArtifactSelection | null>(null);
+  return (
+    <AssistantRuntimeProvider runtime={runtime}>
+      <ChatContext.Provider
+        value={{
+          options,
+          setOptions,
+          openArtifact,
+          saveVerdict: (runId, passed) => saveVerdict(db, runId, passed),
+        }}
+      >
+        <RunSaver db={db} userId={userId} />
+        <ChatShell artifact={artifact} footer={footer} />
+      </ChatContext.Provider>
+    </AssistantRuntimeProvider>
+  );
+}
+
+/** Writes an agent run's record and files when its reply finishes. Runs reopened from history are not rewritten. */
+function RunSaver({ db, userId }: { db: Db; userId: string }) {
+  const aui = useAui();
+  const running = useAuiState((s) => s.thread.isRunning);
+  const wasRunning = useRef(false);
+  useEffect(() => {
+    if (running) {
+      wasRunning.current = true;
+      return;
+    }
+    if (!wasRunning.current) return;
+    wasRunning.current = false;
+    const last = aui.thread.getState().messages.at(-1);
+    const raw = last?.metadata.custom as { run?: Run } | undefined;
+    if (!last || !raw?.run || raw.run.status === "running") return;
+    const run = raw.run;
+    void (async () => {
+      const item = aui.threads.item("main");
+      const conversationId =
+        item.getState().remoteId ?? (await item.initialize().catch(() => null))?.remoteId ?? null;
+      const { failed } = await saveRun(db, {
+        run,
+        userId,
+        conversationId,
+        messageId: last.id,
+        backend: (path) => fetch(`/api/py/${path}`),
+      });
+      if (failed.length)
+        toast.error(`The run was saved, but some files were not: ${failed.join("; ")}`);
+    })().catch((e) => toast.error(errorText(e)));
+  }, [running, aui, db, userId]);
+  return null;
+}
+
+function ChatShell({
+  artifact,
+  footer,
+}: {
+  artifact: ArtifactSelection | null;
+  footer: ReactNode;
+}) {
   const aui = useAui();
   const mobile = useIsMobile();
   const { openArtifact, setOptions } = useChat();
@@ -136,7 +256,9 @@ function ChatShell({ artifact }: { artifact: ArtifactSelection | null }) {
         ?.text,
   );
   useEffect(() => {
-    if (firstText) aui.threads.item("main").rename(firstText.slice(0, 60));
+    const item = aui.threads.item("main");
+    // A reopened chat keeps its stored title instead of being renamed again.
+    if (firstText && !item.getState().title) item.rename(firstText.slice(0, 60));
   }, [firstText, threadId, aui]);
   useEffect(() => {
     openArtifact(null);
@@ -149,7 +271,12 @@ function ChatShell({ artifact }: { artifact: ArtifactSelection | null }) {
     api<Run>(`runs/${encodeURIComponent(id)}`)
       .then((run) => {
         if (run.artifact)
-          openArtifact({ artifact: run.artifact, title: AGENT_LABEL[run.agent], docxHref: `/api/py/runs/${run.id}/docx`, runId: run.id });
+          openArtifact({
+            artifact: run.artifact,
+            title: AGENT_LABEL[run.agent],
+            docxHref: `/api/py/runs/${run.id}/docx`,
+            runId: run.id,
+          });
       })
       .catch((e) => toast.error(errorText(e)));
   }, [openArtifact]);
@@ -212,7 +339,7 @@ function ChatShell({ artifact }: { artifact: ArtifactSelection | null }) {
           <p className="section-label">Chats</p>
           {hasChats ? <ThreadListItems /> : <p className="section-label">No chats yet</p>}
         </div>
-        <AccountFooter />
+        {footer}
       </aside>
       <main className="chat-main">
         <header className="chat-header">
@@ -601,7 +728,7 @@ function ChatComposer() {
 }
 
 function ReplyActions({ meta }: { meta: ChatMeta }) {
-  const { setOptions, openArtifact } = useChat();
+  const { setOptions, openArtifact, saveVerdict } = useChat();
   const aui = useAui();
   const [marked, setMarked] = useState(meta.run?.marked ?? null);
   const [marking, setMarking] = useState(false);
@@ -624,6 +751,7 @@ function ReplyActions({ meta }: { meta: ChatMeta }) {
     setMarking(true);
     try {
       await api(`runs/${meta.run.id}/mark`, { passed });
+      await saveVerdict?.(meta.run.id, passed).catch((e) => toast.error(errorText(e)));
       setMarked(passed);
       toast.success(passed ? "Marked as passed" : "Marked as failed");
     } catch (e) {
